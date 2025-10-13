@@ -1,0 +1,54 @@
+<!-- templates/chat/create_room.html -->
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Создај чет соба - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Создај нова чет соба</h4>
+                    <small class="text-muted">Креирајте простор за комуникација</small>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{% url 'chat:list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Назад кон соби
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roomTypeField = document.getElementById('id_room_type');
+    const courseField = document.getElementById('id_course');
+    const courseWrapper = courseField.closest('.form-group');
+
+    function toggleCourseField() {
+        if (roomTypeField.value === 'course') {
+            courseWrapper.style.display = 'block';
+            courseField.required = true;
+        } else {
+            courseWrapper.style.display = 'none';
+            courseField.required = false;
+            courseField.value = '';
+        }
+    }
+
+    roomTypeField.addEventListener('change', toggleCourseField);
+    toggleCourseField(); // Initial call
+});
+</script>
+{% endblock %}

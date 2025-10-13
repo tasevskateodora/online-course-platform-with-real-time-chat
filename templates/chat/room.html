@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.name }} - Чет{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 60vh;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background-color: #f8f9fa;
+    }
+
+    .message {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+
+    .message.own {
+        background-color: #007bff;
+        color: white;
+        margin-left: auto;
+        margin-right: 1rem;
+    }
+
+    .message.other {
+        background-color: white;
+        border: 1px solid #dee2e6;
+        margin-left: 1rem;
+        margin-right: auto;
+    }
+
+    .message-sender {
+        font-weight: bold;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        margin-top: 0.25rem;
+    }
+
+    .typing-indicator {
+        font-style: italic;
+        color: #6c757d;
+        padding: 0.5rem 1rem;
+        background-color: #e9ecef;
+        border-radius: 0.25rem;
+        margin: 0.5rem 1rem;
+        display: none;
+    }
+
+    .online-users {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .user-online {
+        color: #28a745;
+    }
+
+    .message-input {
+        resize: none;
+        min-height: 60px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Chat Messages -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="bi bi-chat-dots-fill me-2"></i>{{ room.name }}
+                            </h5>
+                            <small class="text-muted">
+                                {{ room.get_room_type_display }}
+                                {% if room.course %} - {{ room.course.title }}{% endif %}
+                            </small>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary" id="online-count">
+                                <i class="bi bi-people-fill me-1"></i>
+                                <span id="participant-count">{{ participants.count }}</span> онлајн
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div class="card-body p-0">
+                    <div class="chat-container p-3" id="chat-messages">
+                        {% for message in messages %}
+                        <div class="message {% if message.sender == user %}own{% else %}other{% endif %}"
+                             data-message-id="{{ message.id }}">
+                            {% if message.sender != user %}
+                                <div class="message-sender">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+                            {% endif %}
+                            <div class="message-content">{{ message.content }}</div>
+                            <div class="message-time">{{ message.timestamp|date:"H:i" }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div class="typing-indicator" id="typing-indicator">
+                        <span id="typing-users"></span> пишува...
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="card-footer">
+                    <form id="message-form" class="d-flex">
+                        <div class="flex-grow-1 me-2">
+                            <textarea class="form-control message-input"
+                                      id="message-input"
+                                      placeholder="Напишете ја вашата порака..."
+                                      rows="2"></textarea>
+                        </div>
+                        <div class="d-flex flex-column">
+                            <button type="submit" class="btn btn-primary mb-2" id="send-button">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="attach-button">
+                                <i class="bi bi-paperclip"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Participants Sidebar -->
+        <div class="col-lg-3">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-people-fill me-2"></i>Учесници
+                        <span class="badge bg-secondary ms-2">{{ participants.count }}</span>
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="online-users" id="participants-list">
+                        {% for participant in participants %}
+                        <div class="d-flex align-items-center p-2 border-bottom participant-item"
+                             data-user-id="{{ participant.id }}">
+                            {% if participant.profile_picture %}
+                                <img src="{{ participant.profile_picture.url }}"
+                                     alt="{{ participant.get_full_name }}"
+                                     class="rounded-circle me-2" width="32" height="32">
+                            {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                     style="width: 32px; height: 32px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">{{ participant.get_full_name|default:participant.username }}</div>
+                                <small class="text-muted">{{ participant.get_user_type_display }}</small>
+                            </div>
+                            <div class="online-indicator" style="display: none;">
+                                <i class="bi bi-circle-fill user-online"></i>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Акции</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if room.course %}
+                        <a href="{{ room.course.get_absolute_url }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-book me-2"></i>Прикажи курс
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'chat:list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-2"></i>Назад кон соби
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roomId = {{ room.id }};
+    const currentUser = '{{ user.username }}';
+    const currentUserId = {{ user.id }};
+
+    // WebSocket connection
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/chat/${roomId}/`;
+    const chatSocket = new WebSocket(wsUrl);
+
+    // DOM elements
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const typingUsers = document.getElementById('typing-users');
+    const participantsList = document.getElementById('participants-list');
+    const participantCount = document.getElementById('participant-count');
+    const attachButton = document.getElementById('attach-button');
+    const fileInput = document.getElementById('file-input');
+
+    // Typing indicator state
+    let typingTimer;
+    let isTyping = false;
+    let typingUsersList = new Set();
+
+    // WebSocket event handlers
+    chatSocket.onopen = function(e) {
+        console.log('Chat socket connected');
+        scrollToBottom();
+    };
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        switch(data.type) {
+            case 'message':
+                addMessage(data.message);
+                break;
+            case 'user_joined':
+                handleUserJoined(data);
+                break;
+            case 'user_left':
+                handleUserLeft(data);
+                break;
+            case 'typing':
+                handleTyping(data);
+                break;
+        }
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket disconnected');
+        // Reconnection logic can be added here
+    };
+
+    chatSocket.onerror = function(e) {
+        console.error('Chat socket error:', e);
+    };
+
+    // Add message to chat
+    function addMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${message.sender_id === currentUserId ? 'own' : 'other'}`;
+        messageDiv.dataset.messageId = message.id;
+
+        let messageHtml = '';
+        if (message.sender_id !== currentUserId) {
+            messageHtml += `<div class="message-sender">${message.sender}</div>`;
+        }
+        messageHtml += `
+            <div class="message-content">${escapeHtml(message.content)}</div>
+            <div class="message-time">${formatTime(message.timestamp)}</div>
+        `;
+
+        messageDiv.innerHTML = messageHtml;
+        messagesContainer.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Send message
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message) {
+            chatSocket.send(JSON.stringify({
+                'type': 'message',
+                'message': message
+            }));
+            messageInput.value = '';
+            sendTypingStatus(false);
+        }
+    }
+
+    // Handle form submission
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+
+    // Handle Enter key (Shift+Enter for new line)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Typing indicator
+    messageInput.addEventListener('input', function() {
+        if (!isTyping) {
+            sendTypingStatus(true);
+            isTyping = true;
+        }
+
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+            sendTypingStatus(false);
+            isTyping = false;
+        }, 1000);
+    });
+
+    function sendTypingStatus(typing) {
+        chatSocket.send(JSON.stringify({
+            'type': 'typing',
+            'is_typing': typing
+        }));
+    }
+
+    function handleTyping(data) {
+        if (data.username === currentUser) return;
+
+        if (data.is_typing) {
+            typingUsersList.add(data.username);
+        } else {
+            typingUsersList.delete(data.username);
+        }
+
+        updateTypingIndicator();
+    }
+
+    function updateTypingIndicator() {
+        if (typingUsersList.size > 0) {
+            const users = Array.from(typingUsersList);
+            typingUsers.textContent = users.length === 1 ? users[0] : `${users.slice(0, -1).join(', ')} и ${users[users.length - 1]}`;
+            typingIndicator.style.display = 'block';
+        } else {
+            typingIndicator.style.display = 'none';
+        }
+    }
+
+    // Handle user joined
+    function handleUserJoined(data) {
+        if (data.user_id !== currentUserId) {
+            const systemMessage = {
+                id: Date.now(),
+                content: `${data.username} се приклучи во собата`,
+                sender: 'Систем',
+                sender_id: 0,
+                timestamp: new Date().toISOString()
+            };
+            addMessage(systemMessage);
+        }
+        updateParticipantCount(1);
+    }
+
+    // Handle user left
+    function handleUserLeft(data) {
+        if (data.user_id !== currentUserId) {
+            const systemMessage = {
+                id: Date.now(),
+                content: `${data.username} ја напушти собата`,
+                sender: 'Систем',
+                sender_id: 0,
+                timestamp: new Date().toISOString()
+            };
+            addMessage(systemMessage);
+        }
+        updateParticipantCount(-1);
+        typingUsersList.delete(data.username);
+        updateTypingIndicator();
+    }
+
+    function updateParticipantCount(change) {
+        const currentCount = parseInt(participantCount.textContent);
+        participantCount.textContent = currentCount + change;
+    }
+
+    // File attachment
+    attachButton.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Handle file upload logic here
+            console.log('File selected:', file.name);
+            // You can implement file upload to your backend here
+        }
+    });
+
+    // Utility functions
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('mk-MK', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Auto-focus message input
+    messageInput.focus();
+});
+</script>
+{% endblock %}

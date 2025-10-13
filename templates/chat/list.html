@@ -1,0 +1,137 @@
+<!-- templates/chat/list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Чет соби - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3><i class="bi bi-chat-dots-fill me-2 text-primary"></i>Чет соби</h3>
+            <p class="text-muted">Комуницирајте со други студенти и инструктори</p>
+        </div>
+        {% if user.user_type == 'instructor' %}
+        <a href="{% url 'chat:create_room' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-2"></i>Создај соба
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            {% if chat_rooms %}
+                <div class="row">
+                    {% for room in chat_rooms %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card chat-room-card h-100 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title">{{ room.name }}</h5>
+                                    {% if room.room_type == 'course' %}
+  <span class="badge bg-primary">{{ room.get_room_type_display }}</span>
+{% elif room.room_type == 'private' %}
+  <span class="badge bg-warning">{{ room.get_room_type_display }}</span>
+{% else %}
+  <span class="badge bg-info">{{ room.get_room_type_display }}</span>
+{% endif %}
+
+                                </div>
+
+                                {% if room.course %}
+                                    <p class="text-muted small mb-2">
+                                        <i class="bi bi-book me-1"></i>{{ room.course.title }}
+                                    </p>
+                                {% endif %}
+
+                                <div class="d-flex justify-content-between align-items-center text-muted small mb-3">
+                                    <span>
+                                        <i class="bi bi-people me-1"></i>{{ room.participants.count }} учесници
+                                    </span>
+                                    <span>
+                                        <i class="bi bi-chat me-1"></i>{{ room.message_count }} пораки
+                                    </span>
+                                </div>
+
+                                {% with latest_message=room.get_latest_message %}
+                                {% if latest_message %}
+                                    <div class="border-top pt-2 mb-3">
+                                        <small class="text-muted">
+                                            <strong>{{ latest_message.sender.get_full_name|default:latest_message.sender.username }}:</strong>
+                                            {{ latest_message.content|truncatewords:8 }}
+                                        </small>
+                                    </div>
+                                {% endif %}
+                                {% endwith %}
+
+                                <a href="{% url 'chat:room' room.id %}" class="btn btn-primary w-100">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Влез во собата
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-chat-square-dots text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">Нема достапни чет соби</h4>
+                    <p class="text-muted">Запишете се на курс за да пристапите до чет собите.</p>
+                    <a href="{% url 'courses:list' %}" class="btn btn-primary">
+                        Прелистај курсеви
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <!-- Quick Actions -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Брзи акции</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if user.user_type == 'instructor' %}
+                        <a href="{% url 'chat:create_room' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-2"></i>Создај соба
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'courses:list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-search me-2"></i>Пребарај курсеви
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Courses -->
+            {% if available_courses %}
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-plus-square me-2"></i>Создај соба за курс</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Курсеви без чет соба:</p>
+                    {% for course in available_courses %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                        <small>{{ course.title|truncatewords:4 }}</small>
+                        <a href="{% url 'chat:create_room' %}?course={{ course.id }}"
+                           class="btn btn-sm btn-outline-success">Создај</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.chat-room-card {
+    transition: transform 0.2s;
+}
+
+.chat-room-card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Мој профил - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Профилна слика"
+                             class="rounded-circle mb-3" width="150" height="150">
+                    {% else %}
+                        <i class="bi bi-person-circle text-muted mb-3" style="font-size: 8rem;"></i>
+                    {% endif %}
+
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">{{ user.get_user_type_display }}</p>
+
+                    {% if user.bio %}
+                        <p class="small">{{ user.bio }}</p>
+                    {% endif %}
+
+                    <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
+                        <i class="bi bi-pencil-fill me-2"></i>Уреди профил
+                    </a>
+                </div>
+            </div>
+
+            <!-- Контакт информации -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i>Информации</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">
+                        <i class="bi bi-envelope-fill me-2"></i>{{ user.email }}
+                    </p>
+                    {% if user.phone_number %}
+                    <p class="small mb-2">
+                        <i class="bi bi-telephone-fill me-2"></i>{{ user.phone_number }}
+                    </p>
+                    {% endif %}
+                    {% if profile.location %}
+                    <p class="small mb-2">
+                        <i class="bi bi-geo-alt-fill me-2"></i>{{ profile.location }}
+                    </p>
+                    {% endif %}
+
+                    <!-- Социјални врски -->
+                    <div class="mt-3">
+                        {% if profile.website %}
+                        <a href="{{ profile.website }}" class="btn btn-sm btn-outline-primary me-2" target="_blank">
+                            <i class="bi bi-globe"></i>
+                        </a>
+                        {% endif %}
+                        {% if profile.linkedin %}
+                        <a href="{{ profile.linkedin }}" class="btn btn-sm btn-outline-primary me-2" target="_blank">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        {% endif %}
+                        {% if profile.github %}
+                        <a href="{{ profile.github }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="bi bi-github"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Статистики -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-book-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>{{ enrollments.count }}</h4>
+                            <small>Активни курсеви</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-trophy-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>{{ enrollments|length }}</h4>
+                            <small>Завршени курсеви</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>0</h4>
+                            <small>Часови учење</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Моментални курсеви -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-book-fill me-2"></i>Моментални курсеви</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrollments %}
+                        {% for enrollment in enrollments %}
+                        <div class="d-flex align-items-center mb-3 p-3 border rounded">
+                            <div class="me-3">
+                                {% if enrollment.course.thumbnail %}
+                                    <img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}"
+                                         class="rounded" width="60" height="60">
+                                {% else %}
+                                    <div class="bg-secondary rounded d-flex align-items-center justify-content-center"
+                                         style="width: 60px; height: 60px;">
+                                        <i class="bi bi-book text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ enrollment.course.title }}</h6>
+                                <p class="text-muted small mb-2">{{ enrollment.course.instructor.get_full_name }}</p>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: {{ enrollment.progress_percentage }}%"
+                                         aria-valuenow="{{ enrollment.progress_percentage }}"
+                                         aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <small class="text-muted">{{ enrollment.progress_percentage|floatformat:0 }}% завршено</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Не сте запишани на ниеден курс.</p>
+                            <a href="{% url 'courses:list' %}" class="btn btn-primary">
+                                Прелистај курсеви
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

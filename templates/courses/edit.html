@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Уреди курс - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-pencil me-2"></i>Уреди курс</h4>
+                    <small class="text-muted">{{ course.title }}</small>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'courses:manage' course.slug %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Назад
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-check-circle me-2"></i>Зачувај промени
+                                </button>
+                                <a href="{{ course.get_absolute_url }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye me-2"></i>Прикажи курс
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

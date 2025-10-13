@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Додај лекција - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Додај нова лекција</h4>
+                    <small class="text-muted">{{ course.title }}</small>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="lesson-form">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'courses:manage' course.slug %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Назад
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-2"></i>Додај лекција
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Совети за создавање лекции</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-play-circle text-primary me-2"></i>Видео лекции</h6>
+                            <ul class="small">
+                                <li>Користете YouTube или Vimeo за хостинг</li>
+                                <li>Оптимална должина: 5-15 минути</li>
+                                <li>Обезбедете квалитетен звук</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-file-text text-success me-2"></i>Текст лекции</h6>
+                            <ul class="small">
+                                <li>Структурирајте ја содржината</li>
+                                <li>Користете заглавја и листи</li>
+                                <li>Додавајте примери и вежби</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lessonTypeField = document.getElementById('id_lesson_type');
+    const videoUrlField = document.getElementById('id_video_url');
+    const videoFileField = document.getElementById('id_video_file');
+    const contentField = document.getElementById('id_content');
+
+    function updateFieldVisibility() {
+        const lessonType = lessonTypeField.value;
+
+        // Video fields
+        const videoFields = [videoUrlField, videoFileField].map(field =>
+            field ? field.closest('.form-group') : null
+        ).filter(Boolean);
+
+        if (lessonType === 'video') {
+            videoFields.forEach(wrapper => wrapper.style.display = 'block');
+        } else {
+            videoFields.forEach(wrapper => wrapper.style.display = 'none');
+            if (videoUrlField) videoUrlField.value = '';
+            if (videoFileField) videoFileField.value = '';
+        }
+
+        // Content field requirements
+        const contentWrapper = contentField ? contentField.closest('.form-group') : null;
+        if (contentWrapper) {
+            if (lessonType === 'text') {
+                contentWrapper.querySelector('label').innerHTML =
+                    'Содржина на лекцијата <span class="text-danger">*</span>';
+                contentField.required = true;
+            } else {
+                contentWrapper.querySelector('label').innerHTML = 'Содржина на лекцијата';
+                contentField.required = false;
+            }
+        }
+    }
+
+    if (lessonTypeField) {
+        lessonTypeField.addEventListener('change', updateFieldVisibility);
+        updateFieldVisibility(); // Initial call
+    }
+});
+</script>
+{% endblock %}

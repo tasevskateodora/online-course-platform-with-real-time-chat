@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.title }} - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Course Header -->
+            <div class="card shadow-sm mb-4">
+                {% if course.thumbnail %}
+                    <img src="{{ course.thumbnail.url }}" class="card-img-top"
+                         alt="{{ course.title }}" style="height: 300px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge bg-{{ course.category.name|lower }} fs-6">{{ course.category.name }}</span>
+                        <span class="badge bg-info fs-6">{{ course.get_difficulty_display }}</span>
+                    </div>
+
+                    <h1 class="card-title h2">{{ course.title }}</h1>
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-person-fill me-2"></i>{{ course.instructor.get_full_name }}
+                        <span class="mx-2">•</span>
+                        <i class="bi bi-calendar-fill me-2"></i>{{ course.created_at|date:"M Y" }}
+                    </p>
+
+                    <p class="card-text">{{ course.description }}</p>
+
+                    <!-- Course Stats -->
+                    <div class="row text-center mb-3">
+                        <div class="col-3">
+                            <div class="border-end">
+                                <i class="bi bi-people-fill text-primary d-block" style="font-size: 1.5rem;"></i>
+                                <strong>{{ total_students }}</strong>
+                                <small class="text-muted d-block">Студенти</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="border-end">
+                                <i class="bi bi-clock-fill text-success d-block" style="font-size: 1.5rem;"></i>
+                                <strong>{{ course.duration_hours }}ч</strong>
+                                <small class="text-muted d-block">Должина</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="border-end">
+                                <i class="bi bi-play-circle-fill text-info d-block" style="font-size: 1.5rem;"></i>
+                                <strong>{{ lessons.count }}</strong>
+                                <small class="text-muted d-block">Лекции</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <i class="bi bi-trophy-fill text-warning d-block" style="font-size: 1.5rem;"></i>
+                            <strong>{{ completion_rate|floatformat:0 }}%</strong>
+                            <small class="text-muted d-block">Завршуваат</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Content -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Содржина на курсот</h5>
+                </div>
+                <div class="card-body">
+                    {% if lessons %}
+                        <div class="accordion" id="lessonAccordion">
+                            {% for lesson in lessons %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="lesson{{ lesson.id }}">
+                                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}"
+                                            type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#lessonContent{{ lesson.id }}">
+                                        <div class="d-flex w-100 justify-content-between align-items-center me-3">
+                                            <span>
+                                                <i class="bi bi-{% if lesson.lesson_type == 'video' %}play-circle{% elif lesson.lesson_type == 'text' %}file-text{% elif lesson.lesson_type == 'quiz' %}question-circle{% else %}clipboard-check{% endif %} me-2"></i>
+                                                {{ lesson.title }}
+                                            </span>
+                                            <div class="d-flex align-items-center">
+                                                {% if lesson.is_free %}
+                                                    <span class="badge bg-success me-2">Бесплатно</span>
+                                                {% endif %}
+                                                <small class="text-muted">{{ lesson.duration_minutes }} мин</small>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="lessonContent{{ lesson.id }}"
+                                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                                     data-bs-parent="#lessonAccordion">
+                                    <div class="accordion-body">
+                                        {% if lesson.content %}
+                                            <p>{{ lesson.content|truncatewords:30 }}</p>
+                                        {% endif %}
+
+                                        {% if is_enrolled or lesson.is_free %}
+                                            <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
+                                               class="btn btn-primary btn-sm">
+                                                <i class="bi bi-play-fill me-1"></i>Започни лекција
+                                            </a>
+                                        {% else %}
+                                            <p class="text-muted small">
+                                                <i class="bi bi-lock-fill me-1"></i>
+                                                Запишете се за пристап до оваа лекција
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-file-earmark-text text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Овој курс сè уште нема додадени лекции.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- What You'll Learn -->
+            {% if course.what_you_learn %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb-fill me-2"></i>Што ќе научите</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in course.what_you_learn|linebreaks|striptags|split:'\n' %}
+                            {% if item.strip %}
+                            <div class="col-md-6 mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>{{ item|truncatewords:10 }}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Requirements -->
+            {% if course.requirements %}
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Предуслови</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ course.requirements|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 20px;">
+                <!-- Enrollment Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <h2 class="text-primary mb-1">
+                                {% if course.price > 0 %}
+                                    {{ course.price }} ден.
+                                {% else %}
+                                    Бесплатно
+                                {% endif %}
+                            </h2>
+                            {% if course.price > 0 %}
+                                <small class="text-muted">еднократна уплата</small>
+                            {% endif %}
+                        </div>
+
+                        {% if user.is_authenticated %}
+                            {% if is_enrolled %}
+                                <div class="alert alert-success">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    Запишани сте на овој курс!
+                                </div>
+                                {% if enrollment.progress_percentage > 0 %}
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between">
+                                            <small>Прогрес</small>
+                                            <small>{{ enrollment.progress_percentage|floatformat:0 }}%</small>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar"
+                                                 style="width: {{ enrollment.progress_percentage }}%"></div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% if lessons %}
+                                    <a href="{% url 'courses:lesson_detail' course.slug lessons.first.id %}"
+                                       class="btn btn-success btn-lg w-100">
+                                        {% if enrollment.progress_percentage > 0 %}
+                                            <i class="bi bi-play-fill me-2"></i>Продолжи со учење
+                                        {% else %}
+                                            <i class="bi bi-play-fill me-2"></i>Започни курс
+                                        {% endif %}
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <form method="post" action="{% url 'courses:enroll' course.slug %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <i class="bi bi-bookmark-plus-fill me-2"></i>
+                                        {% if course.price > 0 %}Купи курс{% else %}Запиши се{% endif %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-person-fill me-2"></i>Најавете се за запишување
+                            </a>
+                        {% endif %}
+
+                        {% if course.max_students %}
+                            <small class="text-muted d-block mt-2">
+                                {{ total_students }}/{{ course.max_students }} места зафатени
+                            </small>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Instructor Info -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-person-badge-fill me-2"></i>Инструктор</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            {% if course.instructor.profile_picture %}
+                                <img src="{{ course.instructor.profile_picture.url }}"
+                                     alt="{{ course.instructor.get_full_name }}"
+                                     class="rounded-circle me-3" width="60" height="60">
+                            {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 60px; height: 60px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ course.instructor.get_full_name }}</h6>
+                                {% if course.instructor.bio %}
+                                    <p class="text-muted small mb-0">{{ course.instructor.bio|truncatewords:15 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{% url 'accounts:public_profile' course.instructor.username %}"
+                           class="btn btn-outline-primary btn-sm w-100 mt-3">
+                            Прикажи профил
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Similar Courses -->
+                {% if similar_courses %}
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="bi bi-collection-fill me-2"></i>Слични курсеви</h6>
+                    </div>
+                    <div class="card-body">
+                        {% for similar_course in similar_courses %}
+                        <div class="d-flex mb-3">
+                            {% if similar_course.thumbnail %}
+                                <img src="{{ similar_course.thumbnail.url }}"
+                                     alt="{{ similar_course.title }}"
+                                     class="rounded me-3" width="60" height="60" style="object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center me-3"
+                                     style="width: 60px; height: 60px;">
+                                    <i class="bi bi-book text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{{ similar_course.get_absolute_url }}"
+                                       class="text-decoration-none">{{ similar_course.title|truncatewords:5 }}</a>
+                                </h6>
+                                <small class="text-muted">{{ similar_course.instructor.get_full_name }}</small><br>
+                                <small class="text-primary fw-bold">
+                                    {% if similar_course.price > 0 %}
+                                        {{ similar_course.price }} ден.
+                                    {% else %}
+                                        Бесплатно
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

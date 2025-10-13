@@ -1,0 +1,228 @@
+<!-- templates/courses/manage.html -->
+{% extends 'base.html' %}
+
+{% block title %}Управување - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Course Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3>{{ course.title }}</h3>
+            <p class="text-muted mb-0">Управување со курс</p>
+        </div>
+        <div>
+            <a href="{{ course.get_absolute_url }}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-eye me-1"></i>Прикажи курс
+            </a>
+            <a href="{% url 'courses:edit' course.slug %}" class="btn btn-warning me-2">
+                <i class="bi bi-pencil me-1"></i>Уреди
+            </a>
+            <a href="{% url 'courses:add_lesson' course.slug %}" class="btn btn-success">
+                <i class="bi bi-plus-circle me-1"></i>Додај лекција
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Course Statistics -->
+        <div class="col-lg-8">
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-people-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>{{ enrollments.count }}</h4>
+                            <small>Студенти</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-play-circle-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>{{ lessons.count }}</h4>
+                            <small>Лекции</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>{{ course.duration_hours }}ч</h4>
+                            <small>Должина</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="bi bi-trophy-fill mb-2" style="font-size: 2rem;"></i>
+                            <h4>{{ course.get_completion_rate|floatformat:0 }}%</h4>
+                            <small>Завршуваат</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lessons Management -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Лекции</h5>
+                    <a href="{% url 'courses:add_lesson' course.slug %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-plus-circle me-1"></i>Додај лекција
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if lessons %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ред.</th>
+                                        <th>Наслов</th>
+                                        <th>Тип</th>
+                                        <th>Должина</th>
+                                        <th>Статус</th>
+                                        <th>Акции</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lesson in lessons %}
+                                    <tr>
+                                        <td><strong>{{ lesson.order }}</strong></td>
+                                        <td>{{ lesson.title }}</td>
+                                        <td>
+                                            <i class="bi bi-{% if lesson.lesson_type == 'video' %}play-circle{% elif lesson.lesson_type == 'text' %}file-text{% elif lesson.lesson_type == 'quiz' %}question-circle{% else %}clipboard-check{% endif %} me-1"></i>
+                                            {{ lesson.get_lesson_type_display }}
+                                        </td>
+                                        <td>{{ lesson.duration_minutes }} мин</td>
+                                        <td>
+                                            {% if lesson.is_free %}
+                                                <span class="badge bg-success">Бесплатно</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Платено</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
+                                               class="btn btn-sm btn-outline-primary">Прикажи</a>
+                                            <a href="{% url 'courses:edit_lesson' course.slug lesson.id %}"
+                                               class="btn btn-sm btn-outline-warning">Уреди</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-file-earmark-plus text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Немате додадено лекции сè уште.</p>
+                            <a href="{% url 'courses:add_lesson' course.slug %}" class="btn btn-primary">
+                                Додајте ја првата лекција
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Students List -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Запишани студенти</h5>
+                </div>
+                <div class="card-body">
+                    {% if enrollments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Студент</th>
+                                        <th>Запишан</th>
+                                        <th>Прогрес</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for enrollment in enrollments %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                {% if enrollment.student.profile_picture %}
+                                                    <img src="{{ enrollment.student.profile_picture.url }}"
+                                                         alt="{{ enrollment.student.get_full_name }}"
+                                                         class="rounded-circle me-2" width="32" height="32">
+                                                {% else %}
+                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                         style="width: 32px; height: 32px;">
+                                                        <i class="bi bi-person text-white small"></i>
+                                                    </div>
+                                                {% endif %}
+                                                {{ enrollment.student.get_full_name|default:enrollment.student.username }}
+                                            </div>
+                                        </td>
+                                        <td>{{ enrollment.enrolled_at|date:"d.m.Y" }}</td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" role="progressbar"
+                                                     style="width: {{ enrollment.progress_percentage }}%">
+                                                    {{ enrollment.progress_percentage|floatformat:0 }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if enrollment.is_completed %}
+                                                <span class="badge bg-success">Завршен</span>
+                                            {% elif enrollment.progress_percentage > 0 %}
+                                                <span class="badge bg-info">Во тек</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Започнат</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-2">Сè уште нема запишани студенти.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Брзи акции</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'courses:add_lesson' course.slug %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-2"></i>Додај лекција
+                        </a>
+                        <a href="{% url 'courses:edit' course.slug %}" class="btn btn-warning">
+                            <i class="bi bi-pencil me-2"></i>Уреди курс
+                        </a>
+                        <a href="{{ course.get_absolute_url }}" class="btn btn-outline-primary">
+                            <i class="bi bi-eye me-2"></i>Прикажи курс
+                        </a>
+                        {% if course.chat_room %}
+                        <a href="{% url 'chat:room' course.chat_room.id %}" class="btn btn-outline-info">
+                            <i class="bi bi-chat-dots me-2"></i>Влез во чет
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

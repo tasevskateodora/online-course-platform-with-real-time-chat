@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Регистрација - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus-fill text-primary" style="font-size: 3rem;"></i>
+                        <h2 class="mt-3">Создајте сметка</h2>
+                        <p class="text-muted">Започнете со вашето учење денес</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <p class="mb-0">Веќе имате сметка?
+                            <a href="{% url 'accounts:login' %}" class="text-primary text-decoration-none">
+                                Најавете се тука
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

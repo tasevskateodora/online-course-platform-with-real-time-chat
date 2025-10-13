@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Уреди профил - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Current Profile Preview -->
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-eye me-2"></i>Преглед на профил</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Профилна слика"
+                             class="rounded-circle mb-3" width="120" height="120" id="profile-preview">
+                    {% else %}
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                             style="width: 120px; height: 120px;" id="profile-preview">
+                            <i class="bi bi-person text-white" style="font-size: 3rem;"></i>
+                        </div>
+                    {% endif %}
+
+                    <h5 id="name-preview">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted" id="bio-preview">{{ user.bio|default:"Нема додадена биографија" }}</p>
+
+                    <div class="text-start">
+                        <p class="small mb-1">
+                            <i class="bi bi-envelope me-2"></i>
+                            <span id="email-preview">{{ user.email }}</span>
+                        </p>
+                        {% if user.phone_number %}
+                        <p class="small mb-1">
+                            <i class="bi bi-telephone me-2"></i>
+                            <span id="phone-preview">{{ user.phone_number }}</span>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-pencil me-2"></i>Уреди го профилот</h4>
+                    <small class="text-muted">Ажурирајте ги вашите информации</small>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" id="profile-form">
+                        {% csrf_token %}
+
+                        <!-- User Information -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Основни информации</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ user_form|crispy }}
+                            </div>
+                        </div>
+
+                        <!-- Profile Information -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Дополнителни информации</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ profile_form|crispy }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Откажи
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>Зачувај промени
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Live preview functionality
+    const firstNameField = document.getElementById('id_first_name');
+    const lastNameField = document.getElementById('id_last_name');
+    const bioField = document.getElementById('id_bio');
+    const emailField = document.getElementById('id_email');
+    const phoneField = document.getElementById('id_phone_number');
+    const profilePictureField = document.getElementById('id_profile_picture');
+
+    // Preview elements
+    const namePreview = document.getElementById('name-preview');
+    const bioPreview = document.getElementById('bio-preview');
+    const emailPreview = document.getElementById('email-preview');
+    const phonePreview = document.getElementById('phone-preview');
+    const profilePreview = document.getElementById('profile-preview');
+
+    // Update name preview
+    function updateNamePreview() {
+        const firstName = firstNameField.value.trim();
+        const lastName = lastNameField.value.trim();
+        const fullName = (firstName + ' ' + lastName).trim();
+        namePreview.textContent = fullName || '{{ user.username }}';
+    }
+
+    // Update bio preview
+    function updateBioPreview() {
+        const bio = bioField.value.trim();
+        bioPreview.textContent = bio || 'Нема додадена биографија';
+    }
+
+    // Update email preview
+    function updateEmailPreview() {
+        emailPreview.textContent = emailField.value;
+    }
+
+    // Update phone preview
+    function updatePhonePreview() {
+        const phone = phoneField.value.trim();
+        if (phone) {
+            phonePreview.textContent = phone;
+            phonePreview.parentElement.style.display = 'block';
+        } else {
+            phonePreview.parentElement.style.display = 'none';
+        }
+    }
+
+    // Update profile picture preview
+    function updateProfilePicturePreview() {
+        const file = profilePictureField.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (profilePreview.tagName === 'IMG') {
+                    profilePreview.src = e.target.result;
+                } else {
+                    // Replace div with img
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.alt = 'Профилна слика';
+                    img.className = 'rounded-circle mb-3';
+                    img.width = 120;
+                    img.height = 120;
+                    img.id = 'profile-preview';
+                    profilePreview.parentElement.replaceChild(img, profilePreview);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Add event listeners
+    if (firstNameField) firstNameField.addEventListener('input', updateNamePreview);
+    if (lastNameField) lastNameField.addEventListener('input', updateNamePreview);
+    if (bioField) bioField.addEventListener('input', updateBioPreview);
+    if (emailField) emailField.addEventListener('input', updateEmailPreview);
+    if (phoneField) phoneField.addEventListener('input', updatePhonePreview);
+    if (profilePictureField) profilePictureField.addEventListener('change', updateProfilePicturePreview);
+});
+</script>
+{% endblock %}
