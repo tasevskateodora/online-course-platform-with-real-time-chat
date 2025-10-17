@@ -23,26 +23,21 @@ class UserRegisterForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Row(
-                Column('first_name', css_class='form-group col-md-6 mb-3'),
-                Column('last_name', css_class='form-group col-md-6 mb-3'),
-                css_class='form-row'
-            ),
-            Field('username', css_class='form-control mb-3'),
-            Field('email', css_class='form-control mb-3'),
-            Field('user_type', css_class='form-control mb-3'),
-            Field('password1', css_class='form-control mb-3'),
-            Field('password2', css_class='form-control mb-3'),
-            Submit('submit', 'Регистрирај се', css_class='btn btn-primary btn-block')
-        )
 
         # Македонски лабели
         self.fields['username'].label = 'Корисничко име'
+        self.fields['username'].help_text = 'Задолжително. 150 или помалку знаци. Единствено букви, бројки и @/./+/-/_.'
         self.fields['email'].label = 'Е-пошта'
         self.fields['password1'].label = 'Лозинка'
+        self.fields['password1'].help_text = 'Вашата лозинка мора да содржи најмалку 8 карактери.'
         self.fields['password2'].label = 'Потврди лозинка'
+        self.fields['password2'].help_text = 'Внесете ја истата лозинка како претходно, за верификација.'
+
+        # Додај Bootstrap класи
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = 'form-control'
+            if field_name == 'user_type':
+                field.widget.attrs['class'] = 'form-select'
 
 
 class UserUpdateForm(forms.ModelForm):

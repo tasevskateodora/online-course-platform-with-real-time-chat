@@ -1,3 +1,4 @@
+<!-- templates/accounts/register.html -->
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
@@ -17,7 +18,20 @@
 
                     <form method="post">
                         {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
                         {{ form|crispy }}
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-person-plus-fill me-2"></i>Регистрирај се
+                            </button>
+                        </div>
                     </form>
 
                     <div class="text-center mt-3">
