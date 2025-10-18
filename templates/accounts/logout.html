@@ -1,0 +1,319 @@
+<!-- templates/accounts/logout.html -->
+{% extends 'base.html' %}
+
+{% block title %}{% if user.is_authenticated %}Dashboard{% else %}Добредојде{% endif %} - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row min-vh-100 align-items-center">
+        <div class="col-lg-10 mx-auto">
+
+            {% if not user.is_authenticated %}
+            <!-- Success Alert after logout -->
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>Успешно се одјавивте!</strong> Се надеваме дека ќе се вратите наскоро.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <!-- Hero Section -->
+            <div class="text-center mb-5 fade-in">
+                <i class="bi bi-mortarboard-fill text-primary" style="font-size: 5rem;"></i>
+                {% if not user.is_authenticated %}
+                <h1 class="display-4 mt-4 fw-bold">Ви благодариме!</h1>
+                <p class="lead text-muted">Се надеваме дека уживавте во вашето учење</p>
+                {% else %}
+                <h1 class="display-4 mt-4 fw-bold">Добредојдовте во EduPlatform</h1>
+                <p class="lead text-muted">Вашата платформа за онлајн учење</p>
+                {% endif %}
+            </div>
+
+            <!-- Action Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-primary hover-card">
+                        <div class="card-body text-center p-5">
+                            <i class="bi bi-box-arrow-in-right text-primary mb-3" style="font-size: 3rem;"></i>
+                            <h3 class="card-title mb-3">Најавете се</h3>
+                            <p class="card-text text-muted mb-4">
+                                Веќе имате сметка? Најавете се за да продолжите со вашето учење.
+                            </p>
+                            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Најава
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-success hover-card">
+                        <div class="card-body text-center p-5">
+                            <i class="bi bi-person-plus-fill text-success mb-3" style="font-size: 3rem;"></i>
+                            <h3 class="card-title mb-3">Создајте сметка</h3>
+                            <p class="card-text text-muted mb-4">
+                                Нова сте тука? Регистрирајте се бесплатно и започнете да учите денес.
+                            </p>
+                            <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-person-plus-fill me-2"></i>Регистрација
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row text-center g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="p-4 feature-box">
+                        <i class="bi bi-book-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Разновидни курсеви</h5>
+                        <p class="text-muted small">Изберете од стотици квалитетни курсеви од различни области</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 feature-box">
+                        <i class="bi bi-chat-dots-fill text-success mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Real-time чет</h5>
+                        <p class="text-muted small">Комуницирајте со инструктори и други студенти во реално време</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 feature-box">
+                        <i class="bi bi-trophy-fill text-warning mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Следење на прогрес</h5>
+                        <p class="text-muted small">Следете го вашиот напредок и добивајте сертификати</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row text-center bg-light rounded p-4 mb-4">
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h3 class="text-primary fw-bold mb-0">100+</h3>
+                    <p class="text-muted mb-0 small">Курсеви</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h3 class="text-success fw-bold mb-0">5,000+</h3>
+                    <p class="text-muted mb-0 small">Студенти</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h3 class="text-info fw-bold mb-0">50+</h3>
+                    <p class="text-muted mb-0 small">Инструктори</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-warning fw-bold mb-0">4.8/5</h3>
+                    <p class="text-muted mb-0 small">Просечна оценка</p>
+                </div>
+            </div>
+
+            <!-- Testimonials -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex mb-3">
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                            </div>
+                            <p class="text-muted">"Одличен начин да научите нови вештини од дома. Инструкторите се многу професионални!"</p>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Марко П.</h6>
+                                    <small class="text-muted">Студент</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex mb-3">
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                            </div>
+                            <p class="text-muted">"Real-time чет системот е фантастичен. Секогаш можам да добијам брз одговор на моите прашања."</p>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Ана Т.</h6>
+                                    <small class="text-muted">Студент</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex mb-3">
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                            </div>
+                            <p class="text-muted">"Како инструктор, оваа платформа ми овозможува лесно да ги управувам моите курсеви и студенти."</p>
+                            <div class="d-flex align-items-center mt-3">
+                                <div class="bg-info rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Петар К.</h6>
+                                    <small class="text-muted">Инструктор</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.hover-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+}
+
+.hover-card.border-primary:hover {
+    border-color: var(--bs-primary) !important;
+    border-width: 2px;
+}
+
+.hover-card.border-success:hover {
+    border-color: var(--bs-success) !important;
+    border-width: 2px;
+}
+
+.feature-box {
+    transition: transform 0.2s ease;
+    border-radius: 0.5rem;
+}
+
+.feature-box:hover {
+    transform: scale(1.05);
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %} class="display-4 mt-4 fw-bold">Успешно се одјавивте</h1>
+                <p class="lead text-muted">Ви благодариме што користевте EduPlatform</p>
+            </div>
+
+            <!-- Action Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-primary" style="transition: transform 0.2s;">
+                        <div class="card-body text-center p-5">
+                            <i class="bi bi-box-arrow-in-right text-primary mb-3" style="font-size: 3rem;"></i>
+                            <h3 class="card-title mb-3">Најавете се</h3>
+                            <p class="card-text text-muted mb-4">
+                                Веќе имате сметка? Најавете се за да продолжите со вашето учење.
+                            </p>
+                            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Најава
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-success" style="transition: transform 0.2s;">
+                        <div class="card-body text-center p-5">
+                            <i class="bi bi-person-plus-fill text-success mb-3" style="font-size: 3rem;"></i>
+                            <h3 class="card-title mb-3">Создајте сметка</h3>
+                            <p class="card-text text-muted mb-4">
+                                Нова сте тука? Регистрирајте се бесплатно и започнете да учите денес.
+                            </p>
+                            <a href="{% url 'accounts:register' %}" class="btn btn-success btn-lg w-100">
+                                <i class="bi bi-person-plus-fill me-2"></i>Регистрација
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row text-center g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="p-4">
+                        <i class="bi bi-book-fill text-primary mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Разновидни курсеви</h5>
+                        <p class="text-muted small">Изберете од стотици квалитетни курсеви од различни области</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4">
+                        <i class="bi bi-chat-dots-fill text-success mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Real-time чет</h5>
+                        <p class="text-muted small">Комуницирајте со инструктори и други студенти во реално време</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4">
+                        <i class="bi bi-trophy-fill text-warning mb-3" style="font-size: 2.5rem;"></i>
+                        <h5>Следење на прогрес</h5>
+                        <p class="text-muted small">Следете го вашиот напредок и добивајте сертификати</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row text-center bg-light rounded p-4 mb-4">
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h3 class="text-primary fw-bold">100+</h3>
+                    <p class="text-muted mb-0">Курсеви</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h3 class="text-success fw-bold">5,000+</h3>
+                    <p class="text-muted mb-0">Студенти</p>
+                </div>
+                <div class="col-md-3 mb-3 mb-md-0">
+                    <h3 class="text-info fw-bold">50+</h3>
+                    <p class="text-muted mb-0">Инструктори</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="text-warning fw-bold">4.8/5</h3>
+                    <p class="text-muted mb-0">Оценка</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.card.border-primary:hover {
+    border-color: var(--bs-primary) !important;
+    border-width: 2px;
+}
+
+.card.border-success:hover {
+    border-color: var(--bs-success) !important;
+    border-width: 2px;
+}
+</style>

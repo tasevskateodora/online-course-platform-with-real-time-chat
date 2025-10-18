@@ -17,6 +17,22 @@ class CustomLoginView(LoginView):
         return reverse_lazy('dashboard:home')
 
 
+class LogoutPageView(TemplateView):
+    """Страна што се прикажува после одјава"""
+    template_name = 'accounts/logout.html'
+
+
+class CustomLogoutView(TemplateView):
+    """Custom logout view што прифаќа GET барања"""
+    template_name = 'accounts/logout.html'
+
+    def get(self, request, *args, **kwargs):
+        from django.contrib.auth import logout
+        logout(request)
+        messages.success(request, 'Успешно се одјавивте од вашата сметка.')
+        return super().get(request, *args, **kwargs)
+
+
 class RegisterView(CreateView):
     model = User
     form_class = UserRegisterForm
@@ -47,7 +63,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
 
 class ProfileEditView(LoginRequiredMixin, TemplateView):
-    template_name = 'accounts/profile_edit.html.html'
+    template_name = 'accounts/profile_edit.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -7,12 +7,12 @@ app_name = 'accounts'
 urlpatterns = [
     # Автентикација
     path('login/', views.CustomLoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('register/', views.RegisterView.as_view(), name='register'),
 
     # Профил
     path('profile/', views.ProfileView.as_view(), name='profile'),
-    path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit.html'),
+    path('profile/edit/', views.ProfileEditView.as_view(), name='profile_edit'),
     path('profile/<str:username>/', views.PublicProfileView.as_view(), name='public_profile'),
 
     # Промена на лозинка
