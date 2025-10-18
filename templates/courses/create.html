@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 
 {% block title %}Создај курс - EduPlatform{% endblock %}
 
@@ -8,14 +7,88 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Создај нов курс</h4>
-                    <small class="text-muted">Споделете го вашето знаење со светот</small>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ form|crispy }}
+
+                        <!-- Наслов -->
+                        <div class="mb-3">
+                            <label class="form-label">Наслов на курсот*</label>
+                            {{ form.title }}
+                        </div>
+
+                        <!-- Опис -->
+                        <div class="mb-3">
+                            <label class="form-label">Опис*</label>
+                            {{ form.description }}
+                        </div>
+
+                        <!-- Категорија -->
+                        <div class="mb-3">
+                            <label class="form-label">Категорија*</label>
+                            {{ form.category }}
+                        </div>
+
+                        <!-- Тежина -->
+                        <div class="mb-3">
+                            <label class="form-label">Ниво на тежина*</label>
+                            {{ form.difficulty }}
+                        </div>
+
+                        <!-- Цена -->
+                        <div class="mb-3">
+                            <label class="form-label">Цена (денари)*</label>
+                            {{ form.price }}
+                        </div>
+
+                        <!-- Должина -->
+                        <div class="mb-3">
+                            <label class="form-label">Должина (часови)*</label>
+                            {{ form.duration_hours }}
+                        </div>
+
+                        <!-- Макс студенти -->
+                        <div class="mb-3">
+                            <label class="form-label">Максимален број студенти</label>
+                            {{ form.max_students }}
+                        </div>
+
+                        <!-- Слика -->
+                        <div class="mb-3">
+                            <label class="form-label">Слика за курсот</label>
+                            {{ form.thumbnail }}
+                        </div>
+
+                        <!-- Предуслови -->
+                        <div class="mb-3">
+                            <label class="form-label">Предуслови</label>
+                            {{ form.requirements }}
+                        </div>
+
+                        <!-- Што ќе научат -->
+                        <div class="mb-3">
+                            <label class="form-label">Што ќе научат студентите*</label>
+                            {{ form.what_you_learn }}
+                        </div>
+
+                        <!-- Статус -->
+                        <div class="mb-3">
+                            <label class="form-label">Статус*</label>
+                            {{ form.status }}
+                        </div>
+
+                        <!-- КОПЧИЊА - ВАЖНО! -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'courses:list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Откажи
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle me-2"></i>Зачувај курс
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
