@@ -1,3 +1,5 @@
+# courses/urls.py
+
 from django.urls import path
 from . import views
 
@@ -8,7 +10,7 @@ urlpatterns = [
     path('', views.CourseListView.as_view(), name='list'),
     path('category/<int:category_id>/', views.CourseListView.as_view(), name='by_category'),
 
-    # Инструктор функции - ставени пред <slug:slug>/ за да има приоритет
+    # Инструктор функции - МОРА да бидат пред <slug:slug>/
     path('create/', views.CourseCreateView.as_view(), name='create'),
     path('my-courses/', views.InstructorCoursesView.as_view(), name='my_courses'),
 

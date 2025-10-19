@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 from django.urls import reverse
+import uuid
 
 
 class Category(models.Model):
@@ -34,7 +35,7 @@ class Course(models.Model):
     )
 
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, blank=True, max_length=250)
     description = models.TextField()
     instructor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -45,7 +46,7 @@ class Course(models.Model):
     thumbnail = models.ImageField(upload_to='course_thumbnails/', blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='published')
     duration_hours = models.PositiveIntegerField(help_text="Должина во часови")
     max_students = models.PositiveIntegerField(null=True, blank=True)
     requirements = models.TextField(blank=True, help_text="Предуслови за курсот")
@@ -58,7 +59,22 @@ class Course(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            # Генерирај slug од наслов
+            base_slug = slugify(self.title, allow_unicode=False)
+
+            # Ако е празен (само кирилични букви), користи UUID
+            if not base_slug or base_slug == '-':
+                base_slug = f'course-{uuid.uuid4().hex[:8]}'
+
+            # Провери уникатност
+            slug = base_slug
+            counter = 1
+            while Course.objects.filter(slug=slug).exclude(pk=self.pk if self.pk else None).exists():
+                slug = f'{base_slug}-{counter}'
+                counter += 1
+
+            self.slug = slug
+
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
