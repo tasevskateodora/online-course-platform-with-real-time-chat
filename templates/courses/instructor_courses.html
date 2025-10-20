@@ -39,9 +39,10 @@
 
                     <!-- Stats -->
                     <div class="d-flex justify-content-between text-muted small mb-3">
-                        <span><i class="bi bi-people"></i> {{ course.students.count }} студенти</span>
-                        <span><i class="bi bi-clock"></i> {{ course.duration }}ч</span>
-                    </div>
+    <span><i class="bi bi-people"></i> {{ course.enrolled_count }} студенти</span>
+    <span><i class="bi bi-clock"></i> {{ course.duration_hours}} часови</span>
+</div>
+
 
                     <!-- Button -->
                     <a href="{% url 'courses:detail' course.slug %}" class="btn btn-primary w-100">Прикажи детали</a>
