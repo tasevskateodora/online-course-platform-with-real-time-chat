@@ -214,6 +214,10 @@
                         <a href="{{ course.get_absolute_url }}" class="btn btn-outline-primary">
                             <i class="bi bi-eye me-2"></i>Прикажи курс
                         </a>
+                     <a href="{% url 'courses:delete' course.slug %}"
+                                   class="btn btn-outline-danger w-100 mt-2">
+                                    <i class="bi bi-trash me-2"></i>Избриши курс
+                                </a>
                         {% if course.chat_room %}
                         <a href="{% url 'chat:room' course.chat_room.id %}" class="btn btn-outline-info">
                             <i class="bi bi-chat-dots me-2"></i>Влез во чет

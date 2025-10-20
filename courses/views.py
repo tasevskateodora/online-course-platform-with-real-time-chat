@@ -11,7 +11,7 @@ from django.utils import timezone
 from .models import Course, Category, Lesson, Enrollment, LessonProgress
 from .forms import CourseForm, LessonForm, CourseSearchForm
 from chat.models import ChatRoom
-
+from django.views.generic import DeleteView
 
 class CourseListView(ListView):
     model = Course
@@ -356,3 +356,18 @@ class LessonUpdateView(InstructorRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse('courses:manage', kwargs={'slug': self.kwargs['slug']})
+
+
+class CourseDeleteView(InstructorRequiredMixin, DeleteView):
+    model = Course
+    template_name = 'courses/course_confirm_delete.html'
+    success_url = reverse_lazy('courses:my_courses')
+
+    def get_queryset(self):
+        # Дозволи само инструкторот да го брише својот курс
+        return Course.objects.filter(instructor=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        course = self.get_object()
+        messages.success(request, f'Курсот "{course.title}" е успешно избришан!')
+        return super().delete(request, *args, **kwargs)
