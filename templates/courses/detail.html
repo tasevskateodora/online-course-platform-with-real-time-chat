@@ -182,6 +182,27 @@
                     </div>
                 </div>
 
+            <!-- Chat Room Link (само за запишани студенти) -->
+                {% if user.is_authenticated and user != course.instructor %}
+                    {% if is_enrolled %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-chat-dots-fill me-2"></i>Комуникација</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted">Поставувајте прашања и дискутирајте со инструкторот и други студенти.</p>
+                            {% if course.chat_room %}
+                                <a href="{% url 'chat:room' course.chat_room.id %}" class="btn btn-primary w-100">
+                                    <i class="bi bi-chat-dots-fill me-2"></i>Влез во чет
+                                </a>
+                            {% else %}
+                                <p class="text-muted small">Чет собата не е достапна.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
                 <!-- Instructor Info -->
                 <div class="card shadow-sm">
                     <div class="card-header">
