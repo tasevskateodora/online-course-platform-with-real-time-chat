@@ -371,3 +371,22 @@ class CourseDeleteView(InstructorRequiredMixin, DeleteView):
         course = self.get_object()
         messages.success(request, f'Курсот "{course.title}" е успешно избришан!')
         return super().delete(request, *args, **kwargs)
+
+
+class LessonDeleteView(InstructorRequiredMixin, DeleteView):
+    model = Lesson
+    template_name = 'courses/lesson_confirm_delete.html'
+    pk_url_kwarg = 'lesson_id'
+
+    def get_queryset(self):
+        # Дозволи само инструкторот да ги брише лекциите од својот курс
+        return Lesson.objects.filter(course__instructor=self.request.user)
+
+    def get_success_url(self):
+        # Врати го на manage страната на курсот
+        return reverse_lazy('courses:manage', kwargs={'slug': self.object.course.slug})
+
+    def delete(self, request, *args, **kwargs):
+        lesson = self.get_object()
+        messages.success(request, f'Лекцијата "{lesson.title}" е успешно избришана!')
+        return super().delete(request, *args, **kwargs)
