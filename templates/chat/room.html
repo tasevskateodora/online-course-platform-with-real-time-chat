@@ -99,6 +99,7 @@
                 </div>
 
                 <!-- Messages Container -->
+
                 <div class="card-body p-0">
                     <div class="chat-container p-3" id="chat-messages">
                         {% for message in messages %}
@@ -112,6 +113,7 @@
                         </div>
                         {% endfor %}
                     </div>
+
 
                     <!-- Typing Indicator -->
                     <div class="typing-indicator" id="typing-indicator">
@@ -201,7 +203,8 @@
 </div>
 
 <!-- Hidden file input -->
-<input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
+    <input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
+
 {% endblock %}
 
 {% block extra_js %}

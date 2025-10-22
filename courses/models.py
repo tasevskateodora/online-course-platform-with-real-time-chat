@@ -98,8 +98,8 @@ class Lesson(models.Model):
     LESSON_TYPE_CHOICES = (
         ('video', 'Видео'),
         ('text', 'Текст'),
-        ('quiz', 'Квиз'),
-        ('assignment', 'Задача'),
+        ('pdf', 'PDF документ'),
+
     )
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')
@@ -107,6 +107,7 @@ class Lesson(models.Model):
     content = models.TextField(blank=True)
     video_url = models.URLField(blank=True)
     video_file = models.FileField(upload_to='lesson_videos/', blank=True)
+    pdf_file = models.FileField(upload_to='lesson_pdfs/', blank=True, null=True)
     lesson_type = models.CharField(max_length=20, choices=LESSON_TYPE_CHOICES)
     order = models.PositiveIntegerField()
     duration_minutes = models.PositiveIntegerField(default=0)
