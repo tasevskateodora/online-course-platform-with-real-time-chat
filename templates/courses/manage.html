@@ -100,13 +100,6 @@
                                         </td>
                                         <td>{{ lesson.duration_minutes }} мин</td>
                                         <td>
-                                            {% if lesson.is_free %}
-                                                <span class="badge bg-success">Бесплатно</span>
-                                            {% else %}
-                                                <span class="badge bg-primary">Платено</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
                                             <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
                                                class="btn btn-sm btn-outline-primary">Прикажи</a>
                                             <a href="{% url 'courses:edit_lesson' course.slug lesson.id %}"

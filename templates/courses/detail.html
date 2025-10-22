@@ -82,29 +82,26 @@
                                         </h6>
                                         <small class="text-muted">
                                             {{ lesson.duration_minutes }} минути
-                                            {% if lesson.is_free %}
-                                                <span class="badge bg-success ms-2">Бесплатно</span>
-                                            {% endif %}
                                         </small>
                                     </div>
-                                    <div>
-                                        {% if user.is_authenticated %}
-                                            {% if user == course.instructor or lesson.is_free %}
-                                                <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-play-fill me-1"></i>Прегледај
-                                                </a>
-                                            {% else %}
-                                                <button class="btn btn-sm btn-outline-secondary" disabled>
-                                                    <i class="bi bi-lock-fill me-1"></i>Заклучено
-                                                </button>
-                                            {% endif %}
-                                        {% else %}
-                                            <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-primary">
-                                                Најави се
-                                            </a>
-                                        {% endif %}
-                                    </div>
+                                   <div>
+    {% if user.is_authenticated %}
+        {% if user == course.instructor or is_enrolled %}
+            <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
+               class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-play-fill me-1"></i>Прегледај
+            </a>
+        {% else %}
+            <a href="{% url 'courses:enroll' course.slug %}" class="btn btn-sm btn-outline-warning">
+                <i class="bi bi-lock-fill me-1"></i>Запиши се за пристап
+            </a>
+        {% endif %}
+    {% else %}
+        <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-primary">
+            Најави се
+        </a>
+    {% endif %}
+</div>
                                 </div>
                             </div>
                             {% endfor %}

@@ -52,7 +52,7 @@ class LessonForm(forms.ModelForm):
         model = Lesson
         fields = [
             'title', 'content', 'lesson_type', 'video_url', 'video_file', 'pdf_file',
-            'duration_minutes', 'is_free'
+            'duration_minutes',
         ]
         labels = {
             'title': 'Наслов на лекцијата',
@@ -62,7 +62,6 @@ class LessonForm(forms.ModelForm):
             'video_file': 'Прикачи видео фајл',
             'pdf_file': 'Прикачи PDF документ',
             'duration_minutes': 'Должина (во минути)',
-            'is_free': 'Бесплатен преглед'
         }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),

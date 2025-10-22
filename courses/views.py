@@ -169,14 +169,13 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
 
         # Провери дали корисникот има пристап
         user = self.request.user
-        if not lesson.is_free:
-            try:
+        try:
                 enrollment = Enrollment.objects.get(
                     student=user,
                     course=lesson.course,
                     is_active=True
                 )
-            except Enrollment.DoesNotExist:
+        except Enrollment.DoesNotExist:
                 raise Http404("Немате пристап до оваа лекција.")
 
         return lesson
