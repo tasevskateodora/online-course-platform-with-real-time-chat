@@ -150,11 +150,20 @@ class Enrollment(models.Model):
 
     def update_progress(self):
         self.progress_percentage = self.get_progress()
-        if self.progress_percentage >= 100:
+
+        total_lessons = self.course.lessons.count()
+
+        # Провери дали е завршен само ако има лекции и прогресот е 100%
+        if total_lessons > 0 and self.progress_percentage >= 100:
             self.is_completed = True
             if not self.completed_at:
                 from django.utils import timezone
                 self.completed_at = timezone.now()
+        else:
+            # Ако има нови лекции или прогресот паднал под 100%, означи како незавршен
+            self.is_completed = False
+            self.completed_at = None
+
         self.save()
 
     def __str__(self):

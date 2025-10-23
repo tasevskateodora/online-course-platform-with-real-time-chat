@@ -12,6 +12,7 @@ from .models import Course, Category, Lesson, Enrollment, LessonProgress
 from .forms import CourseForm, LessonForm, CourseSearchForm
 from chat.models import ChatRoom
 from django.views.generic import DeleteView
+from django.views import View
 
 
 class CourseListView(ListView):
@@ -126,11 +127,10 @@ class CourseDetailView(DetailView):
         return context
 
 
-class EnrollCourseView(LoginRequiredMixin, DetailView):
-    model = Course
+class EnrollCourseView(LoginRequiredMixin, View):
 
-    def post(self, request, *args, **kwargs):
-        course = self.get_object()
+    def post(self, request, slug):
+        course = get_object_or_404(Course, slug=slug)
         user = request.user
 
         # Провери дали корисникот веќе е запишан
@@ -154,22 +154,49 @@ class EnrollCourseView(LoginRequiredMixin, DetailView):
             # Додај го корисникот во чет собата
             chat_room.participants.add(user)
 
-            messages.success(request, f'Успешно се запишавте на курсот "{course.title}"!')
         else:
-            if enrollment.is_active:
-                messages.info(request, 'Веќе сте запишани на овој курс.')
-            else:
+            if not enrollment.is_active:
                 enrollment.is_active = True
                 enrollment.save()
-                messages.success(request, f'Повторно се активизиравте на курсот "{course.title}"!')
 
         return redirect('courses:detail', slug=course.slug)
+
+    def get(self, request, slug):
+        # Ако некој пробува да пристапи преку GET, пренасочи на detail
+        return redirect('courses:detail', slug=slug)
 
 
 class LessonDetailView(LoginRequiredMixin, DetailView):
     model = Lesson
     template_name = 'courses/lesson_detail.html'
     context_object_name = 'lesson'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Провери пристап пред да продолжи
+        course_slug = self.kwargs['slug']
+        lesson_id = self.kwargs['lesson_id']
+
+        lesson = get_object_or_404(
+            Lesson.objects.select_related('course'),
+            id=lesson_id,
+            course__slug=course_slug
+        )
+
+        user = request.user
+
+        # Дозволи пристап само на инструкторот или на запишаните студенти
+        if user != lesson.course.instructor:
+            is_enrolled = Enrollment.objects.filter(
+                student=user,
+                course=lesson.course,
+                is_active=True
+            ).exists()
+
+            if not is_enrolled:
+                # Пренасочи кон detail страната наместо 404
+                return redirect('courses:detail', slug=course_slug)
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_object(self):
         course_slug = self.kwargs['slug']
@@ -180,17 +207,6 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
             id=lesson_id,
             course__slug=course_slug
         )
-
-        # Провери дали корисникот има пристап
-        user = self.request.user
-        try:
-                enrollment = Enrollment.objects.get(
-                    student=user,
-                    course=lesson.course,
-                    is_active=True
-                )
-        except Enrollment.DoesNotExist:
-                raise Http404("Немате пристап до оваа лекција.")
 
         return lesson
 
@@ -247,10 +263,8 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
                 # Ажурирај го прогресот на целиот курс
                 enrollment.update_progress()
 
-                messages.success(request, 'Лекцијата е означена како завршена!')
-
         except Enrollment.DoesNotExist:
-            messages.error(request, 'Грешка при ажурирање на прогресот.')
+            pass
 
         return redirect('courses:lesson_detail', slug=lesson.course.slug, lesson_id=lesson.id)
 

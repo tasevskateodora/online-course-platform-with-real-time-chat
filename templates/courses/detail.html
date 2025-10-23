@@ -86,21 +86,24 @@
                                     </div>
                                    <div>
     {% if user.is_authenticated %}
-        {% if user == course.instructor or is_enrolled %}
-            <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
-               class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-play-fill me-1"></i>Прегледај
-            </a>
-        {% else %}
-            <a href="{% url 'courses:enroll' course.slug %}" class="btn btn-sm btn-outline-warning">
-                <i class="bi bi-lock-fill me-1"></i>Запиши се за пристап
-            </a>
-        {% endif %}
-    {% else %}
-        <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-primary">
-            Најави се
+    {% if user == course.instructor or is_enrolled %}
+        <a href="{% url 'courses:lesson_detail' course.slug lesson.id %}"
+           class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-play-fill me-1"></i>Прегледај
         </a>
+    {% else %}
+        <form method="post" action="{% url 'courses:enroll' course.slug %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-warning">
+                <i class="bi bi-lock-fill me-1"></i>Запиши се за пристап
+            </button>
+        </form>
     {% endif %}
+{% else %}
+    <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-primary">
+        Најави се
+    </a>
+{% endif %}
 </div>
                                 </div>
                             </div>
@@ -138,51 +141,67 @@
         <!-- Sidebar -->
         <div class="col-lg-4">
             <div class="sticky-top" style="top: 20px;">
-                <!-- Enrollment Card -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body text-center">
-                        <div class="mb-3">
-                            <h2 class="text-primary mb-1">
-                                {% if course.price > 0 %}
-                                    {{ course.price }} ден.
-                                {% else %}
-                                    Бесплатно
-                                {% endif %}
-                            </h2>
-                        </div>
+               <!-- Enrollment Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body text-center">
+        <div class="mb-3">
+            <h2 class="text-primary mb-1">
+                {% if course.price > 0 %}
+                    {{ course.price }} ден.
+                {% else %}
+                    Бесплатно
+                {% endif %}
+            </h2>
+        </div>
 
-                        {% if user.is_authenticated %}
-                            {% if user == course.instructor %}
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i>Ова е ваш курс
-                                </div>
-                                <a href="{% url 'courses:manage' course.slug %}"
-                                   class="btn btn-primary btn-lg w-100">
-                                    <i class="bi bi-gear-fill me-2"></i>Управувај
-                                </a>
-                                <a href="{% url 'courses:edit' course.slug %}"
-                                   class="btn btn-outline-secondary w-100 mt-2">
-                                    <i class="bi bi-pencil me-2"></i>Уреди
-                                </a>
-                                 <a href="{% url 'courses:delete' course.slug %}"
-                                   class="btn btn-outline-danger w-100 mt-2">
-                                    <i class="bi bi-trash me-2"></i>Избриши курс
-                                </a>
-                            {% else %}
-                                <form method="post" action="{% url 'courses:enroll' course.slug %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-success btn-lg w-100">
-                                        <i class="bi bi-bookmark-plus-fill me-2"></i>Запиши се
-                                    </button>
-                                </form>
-                            {% endif %}
-                        {% else %}
-                            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">
-                                <i class="bi bi-person-fill me-2"></i>Најавете се
-                            </a>
-                        {% endif %}
-                    </div>
+        {% if user.is_authenticated %}
+            {% if user == course.instructor %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>Ова е ваш курс
                 </div>
+                <a href="{% url 'courses:manage' course.slug %}"
+                   class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-gear-fill me-2"></i>Управувај
+                </a>
+                <a href="{% url 'courses:edit' course.slug %}"
+                   class="btn btn-outline-secondary w-100 mt-2">
+                    <i class="bi bi-pencil me-2"></i>Уреди
+                </a>
+                <a href="{% url 'courses:delete' course.slug %}"
+                   class="btn btn-outline-danger w-100 mt-2">
+                    <i class="bi bi-trash me-2"></i>Избриши курс
+                </a>
+            {% else %}
+                {% if is_enrolled %}
+    <div class="alert alert-success mb-3">
+        <i class="bi bi-check-circle-fill me-2"></i>Веќе сте запишани на овој курс
+    </div>
+    {% if course.lessons.exists %}
+        <a href="{% url 'courses:lesson_detail' course.slug course.lessons.first.id %}"
+           class="btn btn-primary btn-lg w-100">
+            <i class="bi bi-play-fill me-2"></i>Продолжи со учење
+        </a>
+    {% else %}
+        <div class="alert alert-warning mt-3">
+            <i class="bi bi-exclamation-triangle me-2"></i>Овој курс сè уште нема додадени лекции.
+        </div>
+    {% endif %}
+{% else %}
+    <form method="post" action="{% url 'courses:enroll' course.slug %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-lg w-100">
+            <i class="bi bi-bookmark-plus-fill me-2"></i>Запиши се
+        </button>
+    </form>
+{% endif %}
+            {% endif %}
+        {% else %}
+            <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">
+                <i class="bi bi-person-fill me-2"></i>Најавете се
+            </a>
+        {% endif %}
+    </div>
+</div>
 
             <!-- Chat Room Link (само за запишани студенти) -->
                 {% if user.is_authenticated and user != course.instructor %}
