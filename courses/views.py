@@ -13,6 +13,7 @@ from .forms import CourseForm, LessonForm, CourseSearchForm
 from chat.models import ChatRoom
 from django.views.generic import DeleteView
 
+
 class CourseListView(ListView):
     model = Course
     template_name = 'courses/list.html'
@@ -26,10 +27,15 @@ class CourseListView(ListView):
             enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
         )
 
-        # Филтрирање по категорија
+        # Филтрирање по категорија од URL
         category_id = self.kwargs.get('category_id')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
+
+        # Филтрирање по категорија од форма
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category_id=category)
 
         # Пребарување
         search_query = self.request.GET.get('search')
@@ -53,20 +59,28 @@ class CourseListView(ListView):
         elif price_filter == 'paid':
             queryset = queryset.filter(price__gt=0)
 
-        # Сортирање
-        sort_by = self.request.GET.get('sort', '-created_at')
-        if sort_by in ['-created_at', 'title', '-enrolled_count', 'price']:
+        # Сортирање - поправка
+        sort_by = self.request.GET.get('sort')
+        if sort_by and sort_by in ['-created_at', 'title', '-enrolled_count', 'price', '-price']:
             queryset = queryset.order_by(sort_by)
+        else:
+            queryset = queryset.order_by('-created_at')  # Default сортирање
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['categories'] = Category.objects.all()
-        context['search_form'] = CourseSearchForm(self.request.GET)
+        context['search_form'] = CourseSearchForm(self.request.GET or None)
         context['current_category'] = self.kwargs.get('category_id')
-        return context
 
+        # Додај ги GET параметрите за пагинација
+        get_copy = self.request.GET.copy()
+        if 'page' in get_copy:
+            get_copy.pop('page')
+        context['get_params'] = get_copy.urlencode()
+
+        return context
 
 class CourseDetailView(DetailView):
     model = Course

@@ -3,6 +3,7 @@
 from django import forms
 from .models import Course, Lesson, Category
 
+
 class CourseSearchForm(forms.Form):
     search = forms.CharField(
         max_length=100,
@@ -11,6 +12,42 @@ class CourseSearchForm(forms.Form):
             'placeholder': 'Пребарајте курсеви...',
             'class': 'form-control'
         })
+    )
+
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.all(),
+        required=False,
+        empty_label='Сите категории',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    difficulty = forms.ChoiceField(
+        choices=[('', 'Сите нивоа')] + list(Course.DIFFICULTY_CHOICES),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    price = forms.ChoiceField(
+        choices=[
+            ('', 'Сите цени'),
+            ('free', 'Бесплатно'),
+            ('paid', 'Платени'),
+        ],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    sort = forms.ChoiceField(
+        choices=[
+            ('-created_at', 'Најнови прво'),
+            ('title', 'Наслов (А-Ш)'),
+            ('-enrolled_count', 'Најпопуларни'),
+            ('price', 'Цена (ниска-висока)'),
+            ('-price', 'Цена (висока-ниска)'),
+        ],
+        required=False,
+        initial='-created_at',
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
 
 class CourseForm(forms.ModelForm):
