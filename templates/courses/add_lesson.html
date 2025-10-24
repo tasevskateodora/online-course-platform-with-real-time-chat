@@ -14,6 +14,28 @@
                     <small class="text-muted">{{ course.title }}</small>
                 </div>
                 <div class="card-body">
+                    <!-- Прикажи глобални грешки од формата -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Грешка:</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endif %}
+
+                    <!-- Динамички прикажани грешки од JavaScript -->
+                    <div id="validation-errors" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Грешка при креирање на лекција:</strong>
+                        <ul id="error-list" class="mb-0 mt-2"></ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
                     <form method="post" enctype="multipart/form-data" id="lesson-form">
                         {% csrf_token %}
                         {{ form|crispy }}
@@ -36,21 +58,33 @@
                     <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Совети за создавање лекции</h6>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        <strong>Важно:</strong> Пополнете ги само полињата што се релевантни за избраниот тип на лекција.
+                    </div>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <h6><i class="bi bi-play-circle text-primary me-2"></i>Видео лекции</h6>
                             <ul class="small">
-                                <li>Користете YouTube или Vimeo за хостинг</li>
+                                <li>Внесете YouTube/Vimeo URL или прикачете фајл</li>
                                 <li>Оптимална должина: 5-15 минути</li>
-                                <li>Обезбедете квалитетен звук</li>
+                                <li><strong>Не пополнувајте PDF или текст полиња</strong></li>
                             </ul>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <h6><i class="bi bi-file-text text-success me-2"></i>Текст лекции</h6>
                             <ul class="small">
+                                <li>Пополнете го полето "Содржина"</li>
                                 <li>Структурирајте ја содржината</li>
-                                <li>Користете заглавја и листи</li>
-                                <li>Додавајте примери и вежби</li>
+                                <li><strong>Не пополнувајте видео или PDF полиња</strong></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-file-pdf text-danger me-2"></i>PDF лекции</h6>
+                            <ul class="small">
+                                <li>Прикачете PDF документ</li>
+                                <li>Максимална големина: 10MB</li>
+                                <li><strong>Не пополнувајте видео или текст полиња</strong></li>
                             </ul>
                         </div>
                     </div>
@@ -62,45 +96,137 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('lesson-form');
     const lessonTypeField = document.getElementById('id_lesson_type');
     const videoUrlField = document.getElementById('id_video_url');
     const videoFileField = document.getElementById('id_video_file');
+    const pdfFileField = document.getElementById('id_pdf_file');
     const contentField = document.getElementById('id_content');
+    const errorAlert = document.getElementById('validation-errors');
+    const errorList = document.getElementById('error-list');
 
-    function updateFieldVisibility() {
+    // Додај визуелни индикатори за релевантни полиња
+    function highlightRelevantFields() {
         const lessonType = lessonTypeField.value;
 
-        // Video fields
-        const videoFields = [videoUrlField, videoFileField].map(field =>
-            field ? field.closest('.form-group') : null
-        ).filter(Boolean);
+        // Ресетирај ги сите полиња
+        [videoUrlField, videoFileField, pdfFileField, contentField].forEach(field => {
+            if (field) {
+                const wrapper = field.closest('.mb-3') || field.closest('.form-group');
+                if (wrapper) {
+                    wrapper.classList.remove('border', 'border-primary', 'border-success', 'border-danger', 'border-2', 'p-3', 'rounded', 'bg-light');
+                }
+            }
+        });
 
+        // Означи ги релевантните полиња
         if (lessonType === 'video') {
-            videoFields.forEach(wrapper => wrapper.style.display = 'block');
-        } else {
-            videoFields.forEach(wrapper => wrapper.style.display = 'none');
-            if (videoUrlField) videoUrlField.value = '';
-            if (videoFileField) videoFileField.value = '';
-        }
-
-        // Content field requirements
-        const contentWrapper = contentField ? contentField.closest('.form-group') : null;
-        if (contentWrapper) {
-            if (lessonType === 'text') {
-                contentWrapper.querySelector('label').innerHTML =
-                    'Содржина на лекцијата <span class="text-danger">*</span>';
-                contentField.required = true;
-            } else {
-                contentWrapper.querySelector('label').innerHTML = 'Содржина на лекцијата';
-                contentField.required = false;
+            [videoUrlField, videoFileField].forEach(field => {
+                if (field) {
+                    const wrapper = field.closest('.mb-3') || field.closest('.form-group');
+                    if (wrapper) {
+                        wrapper.classList.add('border', 'border-primary', 'border-2', 'p-3', 'rounded', 'bg-light');
+                    }
+                }
+            });
+        } else if (lessonType === 'text') {
+            if (contentField) {
+                const wrapper = contentField.closest('.mb-3') || contentField.closest('.form-group');
+                if (wrapper) {
+                    wrapper.classList.add('border', 'border-success', 'border-2', 'p-3', 'rounded', 'bg-light');
+                }
+            }
+        } else if (lessonType === 'pdf') {
+            if (pdfFileField) {
+                const wrapper = pdfFileField.closest('.mb-3') || pdfFileField.closest('.form-group');
+                if (wrapper) {
+                    wrapper.classList.add('border', 'border-danger', 'border-2', 'p-3', 'rounded', 'bg-light');
+                }
             }
         }
     }
 
+    // Валидација пред submit
+    form.addEventListener('submit', function(e) {
+        const lessonType = lessonTypeField.value;
+        const errors = [];
+
+        if (lessonType === 'video') {
+            // Провери дали се пополнети само видео полиња
+            if (pdfFileField && pdfFileField.files.length > 0) {
+                errors.push('За видео лекции не треба да прикачувате PDF документ.');
+            }
+            if (contentField && contentField.value.trim() !== '') {
+                errors.push('За видео лекции не треба да внесувате текстуална содржина.');
+            }
+        } else if (lessonType === 'text') {
+            // Провери дали се пополнети само текст полиња
+            if (videoUrlField && videoUrlField.value.trim() !== '') {
+                errors.push('За текст лекции не треба да внесувате видео URL.');
+            }
+            if (videoFileField && videoFileField.files.length > 0) {
+                errors.push('За текст лекции не треба да прикачувате видео фајл.');
+            }
+            if (pdfFileField && pdfFileField.files.length > 0) {
+                errors.push('За текст лекции не треба да прикачувате PDF документ.');
+            }
+        } else if (lessonType === 'pdf') {
+            // Провери дали се пополнети само PDF полиња
+            if (videoUrlField && videoUrlField.value.trim() !== '') {
+                errors.push('За PDF лекции не треба да внесувате видео URL.');
+            }
+            if (videoFileField && videoFileField.files.length > 0) {
+                errors.push('За PDF лекции не треба да прикачувате видео фајл.');
+            }
+            if (contentField && contentField.value.trim() !== '') {
+                errors.push('За PDF лекции не треба да внесувате текстуална содржина.');
+            }
+        }
+
+        if (errors.length > 0) {
+            e.preventDefault();
+
+            // Прикажи ги грешките
+            errorList.innerHTML = '';
+            errors.forEach(error => {
+                const li = document.createElement('li');
+                li.textContent = error;
+                errorList.appendChild(li);
+            });
+
+            errorAlert.style.display = 'block';
+
+            // Скролај до грешката
+            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            return false;
+        } else {
+            // Скриј ја грешката ако нема грешки
+            errorAlert.style.display = 'none';
+        }
+    });
+
     if (lessonTypeField) {
-        lessonTypeField.addEventListener('change', updateFieldVisibility);
-        updateFieldVisibility(); // Initial call
+        lessonTypeField.addEventListener('change', function() {
+            highlightRelevantFields();
+            // Скриј ја грешката кога се менува типот
+            errorAlert.style.display = 'none';
+        });
+        highlightRelevantFields(); // Initial call
     }
 });
 </script>
+
+<style>
+/* Анимација за грешка */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.error-shake {
+    animation: shake 0.5s;
+}
+</style>
 {% endblock %}

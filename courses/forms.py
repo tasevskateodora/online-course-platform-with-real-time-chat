@@ -88,7 +88,7 @@ class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
         fields = [
-            'title', 'content', 'lesson_type', 'video_url', 'video_file', 'pdf_file',
+            'title', 'lesson_type', 'content', 'video_url', 'video_file', 'pdf_file',
             'duration_minutes',
         ]
         labels = {

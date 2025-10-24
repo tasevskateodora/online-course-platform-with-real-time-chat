@@ -417,3 +417,4 @@ class LessonDeleteView(InstructorRequiredMixin, DeleteView):
         lesson = self.get_object()
         messages.success(request, f'Лекцијата "{lesson.title}" е успешно избришана!')
         return super().delete(request, *args, **kwargs)
+
