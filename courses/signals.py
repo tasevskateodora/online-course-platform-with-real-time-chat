@@ -2,7 +2,7 @@
 
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Course, Enrollment
+from .models import Course, Enrollment, Lesson
 from chat.models import ChatRoom
 
 
@@ -49,4 +49,34 @@ def remove_student_from_course_chat(sender, instance, **kwargs):
         pass
 
 
+@receiver(post_save, sender=Lesson)
+def update_enrollments_on_new_lesson(sender, instance, created, **kwargs):
+    """
+    Кога се креира нова лекција, ажурирај го прогресот на сите запишани студенти
+    """
+    if created:
+        # Најди ги сите активни enrollments за овој курс
+        enrollments = Enrollment.objects.filter(
+            course=instance.course,
+            is_active=True
+        )
 
+        # Ажурирај го прогресот за секој enrollment
+        for enrollment in enrollments:
+            enrollment.update_progress()
+
+
+@receiver(post_delete, sender=Lesson)
+def update_enrollments_on_lesson_delete(sender, instance, **kwargs):
+    """
+    Кога се брише лекција, ажурирај го прогресот на сите запишани студенти
+    """
+    # Најди ги сите активни enrollments за овој курс
+    enrollments = Enrollment.objects.filter(
+        course=instance.course,
+        is_active=True
+    )
+
+    # Ажурирај го прогресот за секој enrollment
+    for enrollment in enrollments:
+        enrollment.update_progress()

@@ -3,7 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from courses.models import Course, Enrollment
 from chat.models import ChatRoom
-from django.db.models import Count, Q  
+from django.db.models import Count, Q
 from courses.models import Course, Enrollment, LessonProgress
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):

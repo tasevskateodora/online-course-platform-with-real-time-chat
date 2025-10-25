@@ -146,7 +146,8 @@ class Enrollment(models.Model):
             enrollment=self,
             is_completed=True
         ).count()
-        return (completed_lessons / total_lessons) * 100
+        # Заокружи на 2 децимали за да избегнеме float precision грешки
+        return round((completed_lessons / total_lessons) * 100, 2)
 
     def update_progress(self):
         self.progress_percentage = self.get_progress()
