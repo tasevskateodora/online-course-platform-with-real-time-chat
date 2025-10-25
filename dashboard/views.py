@@ -3,7 +3,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from courses.models import Course, Enrollment
 from chat.models import ChatRoom
-
+from django.db.models import Count, Q  
+from courses.models import Course, Enrollment, LessonProgress
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard/home.html'
@@ -60,15 +61,37 @@ class MyCoursesView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        if user.user_type == 'student':
-            context['enrollments'] = Enrollment.objects.filter(
+        if user.user_type == 'instructor':
+            # За инструктори - прикажи ги курсевите што ги предаваат
+            courses = Course.objects.filter(
+                instructor=user
+            ).annotate(
+                enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
+            ).order_by('-created_at')
+        else:
+            # За студенти - прикажи ги курсевите на кои се запишани
+            enrollments = Enrollment.objects.filter(
                 student=user,
                 is_active=True
-            ).select_related('course').order_by('-enrolled_at')
+            ).select_related('course', 'course__instructor', 'course__category')
 
-        elif user.user_type == 'instructor':
-            context['courses'] = Course.objects.filter(
-                instructor=user
-            ).order_by('-created_at')
+            courses = []
+            for enrollment in enrollments:
+                course = enrollment.course
+                course.enrollment = enrollment
 
+                # Најди ја првата незавршена лекција
+                completed_lessons = LessonProgress.objects.filter(
+                    enrollment=enrollment,
+                    is_completed=True
+                ).values_list('lesson_id', flat=True)
+
+                next_lesson = course.lessons.exclude(
+                    id__in=completed_lessons
+                ).order_by('order').first()
+
+                course.next_lesson = next_lesson or course.lessons.first()
+                courses.append(course)
+
+        context['courses'] = courses
         return context
