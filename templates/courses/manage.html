@@ -1,5 +1,6 @@
 <!-- templates/courses/manage.html -->
 {% extends 'base.html' %}
+{% load l10n %}
 
 {% block title %}Управување - {{ course.title }}{% endblock %}
 
@@ -160,13 +161,12 @@
                                         </td>
                                         <td>{{ enrollment.enrolled_at|date:"d.m.Y" }}</td>
                                         <td>
-                                            <div class="progress" style="height: 20px;">
-                                                <div class="progress-bar" role="progressbar"
-                                                     style="width: {{ enrollment.progress_percentage }}%">
-                                                    {{ enrollment.progress_percentage|floatformat:0 }}%
-                                                </div>
-                                            </div>
-                                        </td>
+    <div class="progress" style="height: 20px;">
+        <div class="progress-bar" role="progressbar" style="width: {{ enrollment.progress_percentage|unlocalize }}%; background-color: #007bff;">
+            {{ enrollment.progress_percentage|floatformat:0 }}%
+        </div>
+    </div>
+</td>
                                         <td>
                                             {% if enrollment.is_completed %}
                                                 <span class="badge bg-success">Завршен</span>

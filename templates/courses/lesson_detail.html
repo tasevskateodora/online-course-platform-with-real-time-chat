@@ -128,8 +128,9 @@
 
         <!-- Sidebar -->
         <div class="col-lg-3">
-            <!-- Course Progress -->
-            <!-- Course Progress -->
+            {% load l10n %}
+
+<!-- Course Progress -->
 {% if enrollment %}
 <div class="card shadow-sm mb-3">
     <div class="card-header">
@@ -137,18 +138,13 @@
     </div>
     <div class="card-body text-center">
         <h2 class="text-primary">{{ enrollment.progress_percentage|floatformat:1 }}%</h2>
-        <div class="progress mb-2" style="height: 10px;">
-            <div class="progress-bar" role="progressbar"
-                 style="width: {{ enrollment.progress_percentage }}%"
-                 aria-valuenow="{{ enrollment.progress_percentage }}"
-                 aria-valuemin="0"
-                 aria-valuemax="100"></div>
+        <div style="height: 10px; background-color: #e9ecef; border-radius: 0.25rem; overflow: hidden;">
+            <div style="width: {{ enrollment.progress_percentage|unlocalize }}%; height: 100%; background-color: #007bff;"></div>
         </div>
         <small class="text-muted">Завршени {{ enrollment.progress_percentage|floatformat:1 }}% од курсот</small>
     </div>
 </div>
 {% endif %}
-
             <!-- All Lessons -->
             <div class="card shadow-sm">
                 <div class="card-header">
@@ -192,4 +188,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
