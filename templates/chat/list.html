@@ -10,11 +10,10 @@
             <h3><i class="bi bi-chat-dots-fill me-2 text-primary"></i>Чет соби</h3>
             <p class="text-muted">Комуницирајте со други студенти и инструктори</p>
         </div>
-        {% if user.user_type == 'instructor' %}
+        <!-- СИТЕ корисници можат да креираат соба -->
         <a href="{% url 'chat:create_room' %}" class="btn btn-success">
             <i class="bi bi-plus-circle me-2"></i>Создај соба
         </a>
-        {% endif %}
     </div>
 
     <div class="row">
@@ -28,13 +27,12 @@
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h5 class="card-title">{{ room.name }}</h5>
                                     {% if room.room_type == 'course' %}
-  <span class="badge bg-primary">{{ room.get_room_type_display }}</span>
-{% elif room.room_type == 'private' %}
-  <span class="badge bg-warning">{{ room.get_room_type_display }}</span>
-{% else %}
-  <span class="badge bg-info">{{ room.get_room_type_display }}</span>
-{% endif %}
-
+                                        <span class="badge bg-primary">{{ room.get_room_type_display }}</span>
+                                    {% elif room.room_type == 'private' %}
+                                        <span class="badge bg-warning text-dark">{{ room.get_room_type_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ room.get_room_type_display }}</span>
+                                    {% endif %}
                                 </div>
 
                                 {% if room.course %}
@@ -71,14 +69,50 @@
                     </div>
                     {% endfor %}
                 </div>
+
+                <!-- Pagination ако има повеќе соби -->
+                {% if is_paginated %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">Прва</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Претходна</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Страна {{ page_obj.number }} од {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Следна</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Последна</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
             {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-chat-square-dots text-muted" style="font-size: 4rem;"></i>
                     <h4 class="mt-3 text-muted">Нема достапни чет соби</h4>
-                    <p class="text-muted">Запишете се на курс за да пристапите до чет собите.</p>
-                    <a href="{% url 'courses:list' %}" class="btn btn-primary">
-                        Прелистај курсеви
-                    </a>
+                    <p class="text-muted">Создајте нова соба или запишете се на курс за да пристапите до чет собите.</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{% url 'chat:create_room' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-2"></i>Создај соба
+                        </a>
+                        <a href="{% url 'courses:list' %}" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Прелистај курсеви
+                        </a>
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -86,52 +120,132 @@
         <div class="col-md-4">
             <!-- Quick Actions -->
             <div class="card shadow-sm mb-3">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h6 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Брзи акции</h6>
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        {% if user.user_type == 'instructor' %}
                         <a href="{% url 'chat:create_room' %}" class="btn btn-success">
-                            <i class="bi bi-plus-circle me-2"></i>Создај соба
+                            <i class="bi bi-plus-circle me-2"></i>Создај нова соба
                         </a>
-                        {% endif %}
                         <a href="{% url 'courses:list' %}" class="btn btn-outline-primary">
                             <i class="bi bi-search me-2"></i>Пребарај курсеви
+                        </a>
+                        <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-house me-2"></i>Назад на Dashboard
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Available Courses -->
-            {% if available_courses %}
-            <div class="card shadow-sm">
+            <!-- Chat Info -->
+            <div class="card shadow-sm mb-3">
                 <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Информации</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            <strong>Приватна соба:</strong> 1-на-1 разговор
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-info me-2"></i>
+                            <strong>Групна соба:</strong> Повеќе корисници
+                        </li>
+                        {% if user.user_type == 'instructor' %}
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-primary me-2"></i>
+                            <strong>Курс соба:</strong> Сите запишани студенти
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Available Courses (само за инструктори) -->
+            {% if user.user_type == 'instructor' and available_courses %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
                     <h6 class="mb-0"><i class="bi bi-plus-square me-2"></i>Создај соба за курс</h6>
                 </div>
                 <div class="card-body">
-                    <p class="small text-muted">Курсеви без чет соба:</p>
+                    <p class="small text-muted mb-3">Курсеви без чет соба:</p>
                     {% for course in available_courses %}
-                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                        <small>{{ course.title|truncatewords:4 }}</small>
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded hover-item">
+                        <small class="fw-bold">{{ course.title|truncatewords:5 }}</small>
                         <a href="{% url 'chat:create_room' %}?course={{ course.id }}"
-                           class="btn btn-sm btn-outline-success">Создај</a>
+                           class="btn btn-sm btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>Создај
+                        </a>
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
+
+            <!-- Online Users (опционално) -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-circle-fill text-success me-2" style="font-size: 0.6rem;"></i>
+                        Онлајн корисници
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2">Моментално активни:</p>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-group">
+                            <!-- Ова може да го имплементираш со WebSocket -->
+                            <span class="badge bg-success">{{ chat_rooms|length }}+ соби активни</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
 .chat-room-card {
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
 }
 
 .chat-room-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    border-color: #667eea;
+}
+
+.hover-item {
+    transition: all 0.2s ease;
+}
+
+.hover-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.avatar-group {
+    display: flex;
+    align-items: center;
+}
+
+/* Badge стилови */
+.badge {
+    font-weight: 600;
+    padding: 6px 12px;
+}
+
+/* Card header градиенти */
+.card-header.bg-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.card-header.bg-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
 }
 </style>
+
 {% endblock %}

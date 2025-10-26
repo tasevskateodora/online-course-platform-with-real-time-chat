@@ -11,7 +11,7 @@ User = get_user_model()
 
 
 class ChatRoomForm(forms.ModelForm):
-    # Додај ново поле за избор на корисници
+    # Поле за избор на корисници
     participants = forms.ModelMultipleChoiceField(
         queryset=User.objects.none(),
         widget=forms.CheckboxSelectMultiple,
@@ -44,35 +44,40 @@ class ChatRoomForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
 
-        # Ограничи ги курсевите на оние што ги има корисникот
-        if user and user.user_type == 'instructor':
-            self.fields['course'].queryset = Course.objects.filter(
-                instructor=user,
-                status='published'
-            ).exclude(chat_room__isnull=False)
+        if user:
+            # Ако е инструктор, прикажи ги курсевите
+            if user.user_type == 'instructor':
+                self.fields['course'].queryset = Course.objects.filter(
+                    instructor=user,
+                    status='published'
+                )
+            else:
+                # За студенти, сокриј го курс полето
+                self.fields['course'].queryset = Course.objects.none()
+                self.fields['course'].widget = forms.HiddenInput()
 
-            # Прикажи ги сите активни корисници освен креаторот
+            # СИТЕ корисници можат да ги видат другите корисници
             self.fields['participants'].queryset = User.objects.filter(
                 is_active=True
             ).exclude(id=user.id).order_by('first_name', 'last_name', 'username')
-
-            print(f"DEBUG: Број на корисници: {self.fields['participants'].queryset.count()}")
         else:
             self.fields['course'].queryset = Course.objects.none()
             self.fields['participants'].queryset = User.objects.none()
 
-        # Сокриј го полето за курс ако не е потребно
         self.fields['course'].required = False
 
     def clean(self):
         cleaned_data = super().clean()
         room_type = cleaned_data.get('room_type')
         course = cleaned_data.get('course')
+        user = self.initial.get('user') if hasattr(self, 'initial') else None
 
-        if room_type == 'course' and not course:
-            raise forms.ValidationError(
-                'За курс соби морате да изберете курс.'
-            )
+        # Само инструктори можат да креираат курс соби
+        if room_type == 'course':
+            if not (user and user.user_type == 'instructor'):
+                raise forms.ValidationError('Само инструкторите можат да креираат курс соби.')
+            if not course:
+                raise forms.ValidationError('За курс соби морате да изберете курс.')
 
         if room_type != 'course' and course:
             cleaned_data['course'] = None

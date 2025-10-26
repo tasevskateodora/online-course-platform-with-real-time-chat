@@ -1,6 +1,4 @@
-<!-- templates/chat/create_room.html -->
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 
 {% block title %}Создај чет соба - EduPlatform{% endblock %}
 
@@ -104,16 +102,6 @@
         border-left: 4px solid #667eea;
         background: #e7f3ff;
     }
-
-    #selectAllBtn {
-        margin-bottom: 10px;
-    }
-
-    .no-results-message {
-        text-align: center;
-        padding: 30px 20px;
-        color: #999;
-    }
 </style>
 {% endblock %}
 
@@ -150,9 +138,15 @@
                             {% if form.room_type.errors %}
                                 <div class="text-danger small">{{ form.room_type.errors }}</div>
                             {% endif %}
+                            <small class="text-muted d-block mt-1">
+                                <strong>Приватна:</strong> 1-на-1 разговор |
+                                <strong>Групна:</strong> Повеќе корисници
+                                {% if user.user_type == 'instructor' %} | <strong>За курс:</strong> Сите запишани студенти{% endif %}
+                            </small>
                         </div>
 
-                        <!-- Курс (за курс соби) -->
+                        <!-- Курс (само за инструктори) -->
+                        {% if user.user_type == 'instructor' %}
                         <div class="mb-3 course-field-wrapper" id="courseFieldWrapper">
                             <label for="{{ form.course.id_for_label }}" class="form-label fw-bold">
                                 <i class="bi bi-book me-2"></i>{{ form.course.label }}
@@ -166,6 +160,7 @@
                                 <small>За курс соби, сите запишани студенти автоматски ќе бидат додадени.</small>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Додај корисници -->
                         <div class="mb-4">
@@ -195,25 +190,25 @@
 
                                 <!-- Participants list -->
                                 <div id="participantsList">
-                                    {% for user in form.fields.participants.queryset %}
+                                    {% for user_item in form.fields.participants.queryset %}
                                     <div class="participant-item"
-                                         data-user-name="{{ user.get_full_name|lower }} {{ user.username|lower }}"
-                                         data-user-email="{{ user.email|lower }}">
+                                         data-user-name="{{ user_item.get_full_name|lower }} {{ user_item.username|lower }}"
+                                         data-user-email="{{ user_item.email|lower }}">
                                         <input type="checkbox"
                                                class="participant-checkbox"
                                                name="participants"
-                                               value="{{ user.id }}"
-                                               id="user_{{ user.id }}">
-                                        <label for="user_{{ user.id }}" class="participant-info mb-0">
+                                               value="{{ user_item.id }}"
+                                               id="user_{{ user_item.id }}">
+                                        <label for="user_{{ user_item.id }}" class="participant-info mb-0">
                                             <div class="participant-name">
-                                                {{ user.get_full_name|default:user.username }}
+                                                {{ user_item.get_full_name|default:user_item.username }}
                                             </div>
-                                            <div class="participant-email">{{ user.email }}</div>
+                                            <div class="participant-email">{{ user_item.email }}</div>
                                         </label>
                                         <span class="participant-badge">
-                                            {% if user.user_type == 'instructor' %}
+                                            {% if user_item.user_type == 'instructor' %}
                                                 Инструктор
-                                            {% elif user.user_type == 'student' %}
+                                            {% elif user_item.user_type == 'student' %}
                                                 Студент
                                             {% else %}
                                                 Корисник
@@ -221,17 +216,17 @@
                                         </span>
                                     </div>
                                     {% empty %}
-                                    <div class="no-results-message">
+                                    <div class="text-center text-muted py-4">
                                         <i class="bi bi-person-x" style="font-size: 2rem;"></i>
                                         <p class="mb-0">Нема достапни корисници</p>
                                     </div>
                                     {% endfor %}
                                 </div>
 
-                                <div id="noResults" class="no-results-message" style="display: none;">
+                                <div id="noResults" class="text-center text-muted py-4" style="display: none;">
                                     <i class="bi bi-search" style="font-size: 2rem;"></i>
                                     <p class="mb-0">Нема резултати од пребарувањето</p>
-                                    <small class="text-muted">Обидете се со различен термин</small>
+                                    <small>Обидете се со различен термин</small>
                                 </div>
                             </div>
                         </div>
@@ -257,30 +252,31 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle course field based on room type
+    // Toggle course field based on room type (само за инструктори)
     const roomTypeField = document.getElementById('{{ form.room_type.id_for_label }}');
     const courseFieldWrapper = document.getElementById('courseFieldWrapper');
-    const courseField = document.getElementById('{{ form.course.id_for_label }}');
 
-    function toggleCourseField() {
-        if (roomTypeField && roomTypeField.value === 'course') {
-            courseFieldWrapper.style.display = 'block';
-            if (courseField) courseField.required = true;
-        } else {
-            courseFieldWrapper.style.display = 'none';
-            if (courseField) {
-                courseField.required = false;
-                courseField.value = '';
+    if (roomTypeField && courseFieldWrapper) {
+        const courseField = document.getElementById('{{ form.course.id_for_label }}');
+
+        function toggleCourseField() {
+            if (roomTypeField.value === 'course') {
+                courseFieldWrapper.style.display = 'block';
+                if (courseField) courseField.required = true;
+            } else {
+                courseFieldWrapper.style.display = 'none';
+                if (courseField) {
+                    courseField.required = false;
+                    courseField.value = '';
+                }
             }
         }
-    }
 
-    if (roomTypeField) {
         roomTypeField.addEventListener('change', toggleCourseField);
-        toggleCourseField(); // Initial call
+        toggleCourseField();
     }
 
-    // Search functionality - ПОПРАВЕНО
+    // Search functionality
     const searchInput = document.getElementById('searchUsers');
     const participantItems = document.querySelectorAll('.participant-item');
     const noResults = document.getElementById('noResults');
@@ -294,12 +290,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const userName = item.dataset.userName || '';
                 const userEmail = item.dataset.userEmail || '';
 
-                // Ако нема термин за пребарување, прикажи ги сите
                 if (searchTerm === '') {
                     item.style.display = 'flex';
                     hasResults = true;
                 } else {
-                    // Инаку, филтрирај
                     if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
                         item.style.display = 'flex';
                         hasResults = true;
@@ -309,7 +303,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Прикажи "нема резултати" само ако има термин за пребарување и нема резултати
             if (noResults) {
                 noResults.style.display = (searchTerm !== '' && !hasResults) ? 'block' : 'none';
             }
@@ -333,26 +326,22 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateCount);
     });
 
-    // Select all button - ПОДОБРЕНО
+    // Select all button
     const selectAllBtn = document.getElementById('selectAllBtn');
 
     if (selectAllBtn) {
         selectAllBtn.addEventListener('click', function() {
-            // Земи ги само видливите checkbox-ови
             const visibleCheckboxes = Array.from(checkboxes).filter(cb => {
                 const item = cb.closest('.participant-item');
                 return item && item.style.display !== 'none';
             });
 
-            // Провери дали сите видливи се селектирани
             const allVisibleChecked = visibleCheckboxes.every(cb => cb.checked);
 
-            // Тогл на сите видливи
             visibleCheckboxes.forEach(cb => {
                 cb.checked = !allVisibleChecked;
             });
 
-            // Ажурирај го текстот на копчето
             this.innerHTML = allVisibleChecked
                 ? '<i class="bi bi-check-all me-1"></i>Избери ги сите видливи'
                 : '<i class="bi bi-x-circle me-1"></i>Отселектирај ги сите';
@@ -361,12 +350,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form submission confirmation
+    // Form validation
     const form = document.getElementById('chatRoomForm');
     if (form) {
         form.addEventListener('submit', function(e) {
             const roomName = document.getElementById('{{ form.name.id_for_label }}');
-            const roomType = roomTypeField;
             const checkedCount = document.querySelectorAll('.participant-checkbox:checked').length;
 
             if (roomName && !roomName.value.trim()) {
@@ -375,20 +363,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (roomType && !roomType.value) {
+            if (!roomTypeField || !roomTypeField.value) {
                 e.preventDefault();
                 alert('Ве молиме изберете тип на соба!');
                 return;
             }
 
-            if (roomType && roomType.value === 'course' && courseField && !courseField.value) {
-                e.preventDefault();
-                alert('Ве молиме изберете курс за курс собата!');
-                return;
-            }
-
-            // Optional: Confirm if no participants selected for non-course rooms
-            if (checkedCount === 0 && roomType && roomType.value !== 'course') {
+            if (checkedCount === 0) {
                 const confirmed = confirm('Не сте избрале ниту еден корисник. Дали сакате да продолжите?');
                 if (!confirmed) {
                     e.preventDefault();
@@ -397,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Иницијално ажурирање
+    // Initial count update
     updateCount();
 });
 </script>

@@ -131,12 +131,10 @@ class CreateChatRoomView(LoginRequiredMixin, CreateView):
     template_name = 'chat/create_room.html'
     success_url = reverse_lazy('chat:list')
 
-    def dispatch(self, request, *args, **kwargs):
-        # Само инструктори можат да креираат соби
-        if request.user.user_type != 'instructor':
-            messages.error(request, 'Само инструкторите можат да креираат чет соби.')
-            return redirect('chat:list')
-        return super().dispatch(request, *args, **kwargs)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
@@ -149,9 +147,8 @@ class CreateChatRoomView(LoginRequiredMixin, CreateView):
         selected_participants = form.cleaned_data.get('participants')
         if selected_participants:
             self.object.participants.add(*selected_participants)
-            print(f"DEBUG: Додадени {selected_participants.count()} корисници")
 
-        # Ако е соба за курс, додај ги сите запишани студенти
+        # Ако е соба за курс, додај ги сите запишани студенти (САМО за инструктори)
         if self.object.room_type == 'course' and self.object.course:
             from django.contrib.auth import get_user_model
             User = get_user_model()
@@ -160,18 +157,12 @@ class CreateChatRoomView(LoginRequiredMixin, CreateView):
                 enrollments__is_active=True
             )
             self.object.participants.add(*enrolled_students)
-            print(f"DEBUG: Додадени {enrolled_students.count()} студенти од курсот")
 
         messages.success(
             self.request,
             f'Чет собата "{self.object.name}" е успешно креирана со {self.object.participants.count()} учесници!'
         )
         return response
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
-        return kwargs
 
 
 class JoinChatRoomView(LoginRequiredMixin, View):
