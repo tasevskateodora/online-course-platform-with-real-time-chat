@@ -5,29 +5,44 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit, Field
 from .models import ChatRoom, Message
 from courses.models import Course
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 class ChatRoomForm(forms.ModelForm):
+    # Додај ново поле за избор на корисници
+    participants = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label='Додај корисници во собата'
+    )
+
     class Meta:
         model = ChatRoom
-        fields = ['name', 'room_type', 'course']
+        fields = ['name', 'room_type', 'course', 'participants']
         labels = {
             'name': 'Име на собата',
             'room_type': 'Тип на соба',
             'course': 'Курс (за курс соби)'
         }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Внесете име на собата'
+            }),
+            'room_type': forms.Select(attrs={
+                'class': 'form-control'
+            }),
+            'course': forms.Select(attrs={
+                'class': 'form-control'
+            })
+        }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.layout = Layout(
-            Field('name', css_class='form-control mb-3'),
-            Field('room_type', css_class='form-control mb-3'),
-            Field('course', css_class='form-control mb-3'),
-            Submit('submit', 'Создај соба', css_class='btn btn-primary')
-        )
 
         # Ограничи ги курсевите на оние што ги има корисникот
         if user and user.user_type == 'instructor':
@@ -35,8 +50,16 @@ class ChatRoomForm(forms.ModelForm):
                 instructor=user,
                 status='published'
             ).exclude(chat_room__isnull=False)
+
+            # Прикажи ги сите активни корисници освен креаторот
+            self.fields['participants'].queryset = User.objects.filter(
+                is_active=True
+            ).exclude(id=user.id).order_by('first_name', 'last_name', 'username')
+
+            print(f"DEBUG: Број на корисници: {self.fields['participants'].queryset.count()}")
         else:
             self.fields['course'].queryset = Course.objects.none()
+            self.fields['participants'].queryset = User.objects.none()
 
         # Сокриј го полето за курс ако не е потребно
         self.fields['course'].required = False
