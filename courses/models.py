@@ -121,6 +121,30 @@ class Lesson(models.Model):
     def __str__(self):
         return f"{self.course.title} - {self.title}"
 
+    def get_next_lesson(self):
+        """Врати ја следната лекција во истиот курс"""
+        return Lesson.objects.filter(
+            course=self.course,
+            order__gt=self.order
+        ).order_by('order').first()
+
+    def get_previous_lesson(self):
+        """Врати ја претходната лекција во истиот курс"""
+        return Lesson.objects.filter(
+            course=self.course,
+            order__lt=self.order
+        ).order_by('-order').first()
+
+    def is_last_lesson(self):
+        """Провери дали ова е последната лекција"""
+        return not self.get_next_lesson()
+
+    def is_first_lesson(self):
+        """Провери дали ова е првата лекција"""
+        return not self.get_previous_lesson()
+
+
+
 
 class Enrollment(models.Model):
     student = models.ForeignKey(

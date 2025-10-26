@@ -39,7 +39,6 @@
                                 {% if 'youtube.com' in lesson.video_url or 'youtu.be' in lesson.video_url %}
                                     {% if 'watch?v=' in lesson.video_url %}
                                         <iframe src="https://www.youtube.com/embed/{{ lesson.video_url|cut:'https://www.youtube.com/watch?v=' }}" allowfullscreen></iframe>
-
                                     {% else %}
                                         <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
                                     {% endif %}
@@ -59,7 +58,7 @@
                         {% endif %}
                     {% endif %}
 
-                   <!-- PDF Content -->
+                    <!-- PDF Content -->
                     {% if lesson.lesson_type == 'pdf' %}
                         {% if lesson.pdf_file %}
                             <div class="card bg-light mb-4">
@@ -77,7 +76,7 @@
                                 </div>
                             </div>
 
-                            <!-- PDF Preview (опционално) -->
+                            <!-- PDF Preview -->
                             <div class="border rounded p-2 mb-4" style="height: 600px;">
                                 <iframe src="{{ lesson.pdf_file.url }}" width="100%" height="100%" style="border: none;"></iframe>
                             </div>
@@ -91,36 +90,50 @@
                         </div>
                     {% endif %}
 
-                    <!-- Lesson Navigation -->
-                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-                        {% if lesson.order > 1 %}
-                            {% for l in all_lessons %}
-                                {% if l.order == lesson.order|add:"-1" %}
-                                    <a href="{% url 'courses:lesson_detail' lesson.course.slug l.id %}"
+                    <!-- ПОПРАВЕНА Lesson Navigation -->
+                    <div class="lesson-navigation d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                        <!-- Претходна лекција -->
+                        <div>
+                            {% with previous=lesson.get_previous_lesson %}
+                                {% if previous %}
+                                    <a href="{% url 'courses:lesson_detail' lesson.course.slug previous.id %}"
                                        class="btn btn-outline-primary">
                                         <i class="bi bi-arrow-left me-2"></i>Претходна лекција
                                     </a>
+                                {% else %}
+                                    <!-- Ако е прва лекција, покажи назад кон курс -->
+                                    <a href="{% url 'courses:detail' lesson.course.slug %}"
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-2"></i>Назад кон курс
+                                    </a>
                                 {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <div></div>
-                        {% endif %}
+                            {% endwith %}
+                        </div>
 
-                        {% if lesson.order < all_lessons.count %}
-                            {% for l in all_lessons %}
-                                {% if l.order == lesson.order|add:"1" %}
-                                    <a href="{% url 'courses:lesson_detail' lesson.course.slug l.id %}"
+                        <!-- Прогрес индикатор -->
+                        <div class="text-center">
+                            <small class="text-muted">
+                                Лекција {{ lesson.order }} од {{ all_lessons.count }}
+                            </small>
+                        </div>
+
+                        <!-- Следна лекција -->
+                        <div>
+                            {% with next=lesson.get_next_lesson %}
+                                {% if next %}
+                                    <a href="{% url 'courses:lesson_detail' lesson.course.slug next.id %}"
                                        class="btn btn-primary">
                                         Следна лекција<i class="bi bi-arrow-right ms-2"></i>
                                     </a>
+                                {% else %}
+                                    <!-- Последна лекција - назад кон курс -->
+                                    <a href="{% url 'courses:detail' lesson.course.slug %}"
+                                       class="btn btn-success">
+                                        <i class="bi bi-trophy me-2"></i>Заврши курс
+                                    </a>
                                 {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            <a href="{% url 'courses:detail' lesson.course.slug %}"
-                               class="btn btn-success">
-                                Назад кон курс<i class="bi bi-arrow-left ms-2"></i>
-                            </a>
-                        {% endif %}
+                            {% endwith %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -130,21 +143,22 @@
         <div class="col-lg-3">
             {% load l10n %}
 
-<!-- Course Progress -->
-{% if enrollment %}
-<div class="card shadow-sm mb-3">
-    <div class="card-header">
-        <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Прогрес</h6>
-    </div>
-    <div class="card-body text-center">
-        <h2 class="text-primary">{{ enrollment.progress_percentage|floatformat:1 }}%</h2>
-        <div style="height: 10px; background-color: #e9ecef; border-radius: 0.25rem; overflow: hidden;">
-            <div style="width: {{ enrollment.progress_percentage|unlocalize }}%; height: 100%; background-color: #007bff;"></div>
-        </div>
-        <small class="text-muted">Завршени {{ enrollment.progress_percentage|floatformat:1 }}% од курсот</small>
-    </div>
-</div>
-{% endif %}
+            <!-- Course Progress -->
+            {% if enrollment %}
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Прогрес</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-primary">{{ enrollment.progress_percentage|floatformat:1 }}%</h2>
+                    <div style="height: 10px; background-color: #e9ecef; border-radius: 0.25rem; overflow: hidden;">
+                        <div style="width: {{ enrollment.progress_percentage|unlocalize }}%; height: 100%; background-color: #007bff;"></div>
+                    </div>
+                    <small class="text-muted">Завршени {{ enrollment.progress_percentage|floatformat:1 }}% од курсот</small>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- All Lessons -->
             <div class="card shadow-sm">
                 <div class="card-header">
@@ -159,13 +173,22 @@
                                 <div>
                                     <h6 class="mb-1">{{ l.order }}. {{ l.title }}</h6>
                                     <small>
-                                        <i class="bi bi-{% if l.lesson_type == 'video' %}play-circle{% elif l.lesson_type == 'text' %}file-text{% elif l.lesson_type == 'quiz' %}question-circle{% else %}clipboard-check{% endif %} me-1"></i>
+                                        <i class="bi bi-{% if l.lesson_type == 'video' %}play-circle{% elif l.lesson_type == 'text' %}file-text{% elif l.lesson_type == 'pdf' %}file-pdf{% else %}clipboard-check{% endif %} me-1"></i>
                                         {{ l.duration_minutes }} мин
                                     </small>
                                 </div>
-                                {% if l.id == lesson.id %}
-                                    <i class="bi bi-eye-fill"></i>
-                                {% endif %}
+                                <div>
+                                    {% if l.id == lesson.id %}
+                                        <i class="bi bi-eye-fill text-primary"></i>
+                                    {% else %}
+                                        <!-- Провери дали е завршена лекцијата -->
+                                        {% for progress in lesson_progress %}
+                                            {% if progress.lesson.id == l.id and progress.is_completed %}
+                                                <i class="bi bi-check-circle-fill text-success"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
                             </div>
                         </a>
                         {% endfor %}
