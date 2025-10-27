@@ -131,17 +131,18 @@
 
                         <!-- Тип на соба -->
                         <div class="mb-3">
-                            <label for="{{ form.room_type.id_for_label }}" class="form-label fw-bold">
+                            <label for="roomType" class="form-label fw-bold">
                                 <i class="bi bi-layout-three-columns me-2"></i>{{ form.room_type.label }}
                             </label>
 
-                            <select name="{{ form.room_type.name }}" id="{{ form.room_type.id_for_label }}" class="form-select">
-                                <option value="">-- Изберете тип на соба --</option>
+                            <select name="{{ form.room_type.name }}" id="roomType" class="form-select">
                                 {% if user.user_type == 'instructor' %}
+                                    <option value="">-- Изберете тип на соба --</option>
                                     <option value="course">Курс</option>
                                     <option value="private">Приватна</option>
-                                    <option value="public">Групна</option>
+                                    <option value="group">Групна</option>
                                 {% elif user.user_type == 'student' %}
+                                    <option value="">-- Изберете тип на соба --</option>
                                     <option value="private">Приватна</option>
                                     <option value="group">Групна</option>
                                 {% endif %}
@@ -187,21 +188,15 @@
                             </div>
 
                             <div class="participants-section">
-                                <!-- Search box -->
                                 <div class="search-box position-relative">
                                     <i class="bi bi-search search-icon"></i>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="searchUsers"
-                                           placeholder="Пребарај корисник по име или email...">
+                                    <input type="text" class="form-control" id="searchUsers" placeholder="Пребарај корисник по име или email...">
                                 </div>
 
-                                <!-- Select all button -->
                                 <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="selectAllBtn">
                                     <i class="bi bi-check-all me-1"></i>Избери ги сите видливи
                                 </button>
 
-                                <!-- Participants list -->
                                 <div id="participantsList">
                                     {% for user_item in form.fields.participants.queryset %}
                                     <div class="participant-item"
@@ -244,7 +239,6 @@
                             </div>
                         </div>
 
-                        <!-- Buttons -->
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-check-circle me-2"></i>Создај соба
@@ -265,10 +259,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle course field based on room type (само за инструктори)
-    const roomTypeField = document.getElementById('{{ form.room_type.id_for_label }}');
+    const roomTypeField = document.getElementById('roomType');
     const courseFieldWrapper = document.getElementById('courseFieldWrapper');
+    const checkboxes = document.querySelectorAll('.participant-checkbox');
+    const selectedCount = document.getElementById('selectedCount');
+    const countNumber = document.getElementById('countNumber');
 
+    // Toggle course field (само за инструктори)
     if (roomTypeField && courseFieldWrapper) {
         const courseField = document.getElementById('{{ form.course.id_for_label }}');
 
@@ -289,44 +286,19 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleCourseField();
     }
 
-    // Search functionality
-    const searchInput = document.getElementById('searchUsers');
-    const participantItems = document.querySelectorAll('.participant-item');
-    const noResults = document.getElementById('noResults');
-
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
-            let hasResults = false;
-
-            participantItems.forEach(item => {
-                const userName = item.dataset.userName || '';
-                const userEmail = item.dataset.userEmail || '';
-
-                if (searchTerm === '') {
-                    item.style.display = 'flex';
-                    hasResults = true;
-                } else {
-                    if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
-                        item.style.display = 'flex';
-                        hasResults = true;
-                    } else {
-                        item.style.display = 'none';
-                    }
-                }
-            });
-
-            if (noResults) {
-                noResults.style.display = (searchTerm !== '' && !hasResults) ? 'block' : 'none';
+    // 🧩 Валидација за "Приватна" соба — само 1 корисник
+    checkboxes.forEach(cb => cb.addEventListener('change', function() {
+        if (roomTypeField && roomTypeField.value === 'private') {
+            const selected = document.querySelectorAll('.participant-checkbox:checked');
+            if (selected.length > 1) {
+                this.checked = false;
+                alert('Приватна соба дозволува само 1 корисник. За повеќе, изберете Групна.');
             }
-        });
-    }
+        }
+        updateCount();
+    }));
 
-    // Update selected count
-    const checkboxes = document.querySelectorAll('.participant-checkbox');
-    const selectedCount = document.getElementById('selectedCount');
-    const countNumber = document.getElementById('countNumber');
-
+    // Броење избрани
     function updateCount() {
         const checked = document.querySelectorAll('.participant-checkbox:checked').length;
         if (countNumber) countNumber.textContent = checked;
@@ -335,63 +307,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateCount);
-    });
+    // Search
+    const searchInput = document.getElementById('searchUsers');
+    const participantItems = document.querySelectorAll('.participant-item');
+    const noResults = document.getElementById('noResults');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const term = this.value.toLowerCase().trim();
+            let hasResults = false;
+            participantItems.forEach(item => {
+                const user = (item.dataset.userName || '') + (item.dataset.userEmail || '');
+                if (!term || user.includes(term)) {
+                    item.style.display = 'flex';
+                    hasResults = true;
+                } else item.style.display = 'none';
+            });
+            noResults.style.display = hasResults ? 'none' : 'block';
+        });
+    }
 
-    // Select all button
+    // Select all visible
     const selectAllBtn = document.getElementById('selectAllBtn');
-
     if (selectAllBtn) {
         selectAllBtn.addEventListener('click', function() {
-            const visibleCheckboxes = Array.from(checkboxes).filter(cb => {
-                const item = cb.closest('.participant-item');
-                return item && item.style.display !== 'none';
-            });
-
-            const allVisibleChecked = visibleCheckboxes.every(cb => cb.checked);
-
-            visibleCheckboxes.forEach(cb => {
-                cb.checked = !allVisibleChecked;
-            });
-
-            this.innerHTML = allVisibleChecked
+            const visible = Array.from(checkboxes).filter(cb => cb.closest('.participant-item').style.display !== 'none');
+            const allChecked = visible.every(cb => cb.checked);
+            visible.forEach(cb => cb.checked = !allChecked);
+            this.innerHTML = allChecked
                 ? '<i class="bi bi-check-all me-1"></i>Избери ги сите видливи'
                 : '<i class="bi bi-x-circle me-1"></i>Отселектирај ги сите';
-
             updateCount();
         });
     }
 
-    // Form validation
+    // Финална валидација пред submit
     const form = document.getElementById('chatRoomForm');
     if (form) {
         form.addEventListener('submit', function(e) {
-            const roomName = document.getElementById('{{ form.name.id_for_label }}');
-            const checkedCount = document.querySelectorAll('.participant-checkbox:checked').length;
+            const nameField = document.getElementById('{{ form.name.id_for_label }}');
+            const checked = document.querySelectorAll('.participant-checkbox:checked').length;
 
-            if (roomName && !roomName.value.trim()) {
+            if (!nameField.value.trim()) {
                 e.preventDefault();
                 alert('Ве молиме внесете име на собата!');
                 return;
             }
-
-            if (!roomTypeField || !roomTypeField.value) {
+            if (!roomTypeField.value) {
                 e.preventDefault();
                 alert('Ве молиме изберете тип на соба!');
                 return;
             }
-
-            if (checkedCount === 0) {
-                const confirmed = confirm('Не сте избрале ниту еден корисник. Дали сакате да продолжите?');
-                if (!confirmed) {
-                    e.preventDefault();
-                }
+            if (roomTypeField.value === 'private' && checked > 1) {
+                e.preventDefault();
+                alert('Приватна соба може да има само 1 корисник!');
+                return;
             }
         });
     }
 
-    // Initial count update
     updateCount();
 });
 </script>
