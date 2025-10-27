@@ -134,10 +134,23 @@
                             <label for="{{ form.room_type.id_for_label }}" class="form-label fw-bold">
                                 <i class="bi bi-layout-three-columns me-2"></i>{{ form.room_type.label }}
                             </label>
-                            {{ form.room_type }}
+
+                            <select name="{{ form.room_type.name }}" id="{{ form.room_type.id_for_label }}" class="form-select">
+                                <option value="">-- Изберете тип на соба --</option>
+                                {% if user.user_type == 'instructor' %}
+                                    <option value="course">Курс</option>
+                                    <option value="private">Приватна</option>
+                                    <option value="public">Групна</option>
+                                {% elif user.user_type == 'student' %}
+                                    <option value="private">Приватна</option>
+                                    <option value="group">Групна</option>
+                                {% endif %}
+                            </select>
+
                             {% if form.room_type.errors %}
                                 <div class="text-danger small">{{ form.room_type.errors }}</div>
                             {% endif %}
+
                             <small class="text-muted d-block mt-1">
                                 <strong>Приватна:</strong> 1-на-1 разговор |
                                 <strong>Групна:</strong> Повеќе корисници
