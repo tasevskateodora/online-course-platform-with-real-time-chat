@@ -11,97 +11,124 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS -->
-    <style>
-        :root {
-            --primary-color: #4f46e5;
-            --secondary-color: #6366f1;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --dark-color: #1f2937;
-            --light-color: #f8fafc;
-        }
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #6366f1;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --dark-color: #1f2937;
+        --light-color: #f8fafc;
+    }
 
-        .navbar-brand {
-            font-weight: bold;
-            color: var(--primary-color) !important;
-        }
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
+    .navbar-brand {
+        font-weight: bold;
+        color: var(--primary-color) !important;
+    }
 
-        .btn-primary:hover {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-        }
+    /* ПОПРАВКА ЗА NAVBAR Z-INDEX */
+    .navbar {
+        z-index: 1030 !important;
+        position: sticky;
+        top: 0;
+    }
 
-        .sidebar {
-            min-height: 100vh;
-            background-color: var(--light-color);
-            border-right: 1px solid #e5e7eb;
-        }
+    /* Dropdown мени над сè */
+    .navbar .dropdown-menu {
+        z-index: 1051 !important;
+    }
 
-        .course-card {
-            transition: transform 0.2s;
-            border: 1px solid #e5e7eb;
-        }
+    .navbar-nav .nav-item.dropdown {
+        position: relative;
+        z-index: 1050 !important;
+    }
 
-        .course-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
-        .chat-container {
-            height: 500px;
-            overflow-y: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
-        }
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
 
-        .message {
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-        }
+    .sidebar {
+        min-height: 100vh;
+        background-color: var(--light-color);
+        border-right: 1px solid #e5e7eb;
+    }
 
-        .message.own {
-            background-color: var(--primary-color);
-            color: white;
-            margin-left: 20%;
-        }
+    .course-card {
+        transition: transform 0.2s;
+        border: 1px solid #e5e7eb;
+        position: relative;
+        z-index: 1;
+    }
 
-        .message.other {
-            background-color: #f3f4f6;
-            margin-right: 20%;
-        }
+    .course-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 2;
+    }
 
-        .typing-indicator {
-            font-style: italic;
-            color: #6b7280;
-            padding: 0.5rem;
-        }
+    .chat-container {
+        height: 500px;
+        overflow-y: auto;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+    }
 
-        .online-indicator {
-            width: 8px;
-            height: 8px;
-            background-color: var(--success-color);
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 0.5rem;
-        }
+    .message {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+    }
 
-        .progress-circle {
-            width: 40px;
-            height: 40px;
-        }
+    .message.own {
+        background-color: var(--primary-color);
+        color: white;
+        margin-left: 20%;
+    }
 
-        .footer {
-            background-color: var(--dark-color);
-            color: white;
-            margin-top: auto;
-        }
-    </style>
+    .message.other {
+        background-color: #f3f4f6;
+        margin-right: 20%;
+    }
+
+    .typing-indicator {
+        font-style: italic;
+        color: #6b7280;
+        padding: 0.5rem;
+    }
+
+    .online-indicator {
+        width: 8px;
+        height: 8px;
+        background-color: var(--success-color);
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+
+    .progress-circle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .footer {
+        background-color: var(--dark-color);
+        color: white;
+        margin-top: auto;
+    }
+
+    /* Осигурај дека сите картички се под navbar */
+    main .card {
+        position: relative;
+        z-index: 1;
+    }
+</style>
     {% block extra_css %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">

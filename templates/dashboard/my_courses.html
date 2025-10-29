@@ -95,41 +95,50 @@
                                     </a>
                                 </div>
                             {% else %}
-                                <!-- Прогрес за студент -->
-                                {% with enrollment=course.enrollment %}
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <small class="text-muted">Прогрес</small>
-                                            <small class="fw-bold text-primary">{{ enrollment.progress_percentage|floatformat:0 }}%</small>
-                                        </div>
-                                        <div class="progress" style="height: 8px;">
-                                            <div class="progress-bar" role="progressbar"
-                                                 style="width: {{ enrollment.progress_percentage }}%"
-                                                 aria-valuenow="{{ enrollment.progress_percentage }}"
-                                                 aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                    </div>
+                              <!-- Прогрес за студент  -->
+{% with enrollment=course.enrollment %}
+    {% load l10n %}
+    <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted fw-bold">Прогрес</small>
+            <h5 class="fw-bold text-primary"
+            >
+                {{ enrollment.progress_percentage|floatformat:1 }}%
+            </h5>
+        </div>
+        <div style="height: 10px; background-color: #e9ecef; border-radius: 0.25rem; overflow: hidden;">
+            <div style="
+                width: {{ enrollment.progress_percentage|unlocalize }}%;
+                height: 100%;
+                background-color: #007bff;
+                transition: width 0.3s ease;
+            "></div>
+        </div>
+        <small class="text-muted d-block mt-1">
+            Завршени {{ enrollment.progress_percentage|floatformat:1 }}% од курсот
+        </small>
+    </div>
 
-                                    {% if course.lessons.exists %}
-                                        {% with next_lesson=course.next_lesson %}
-                                            {% if next_lesson %}
-                                                <a href="{% url 'courses:lesson_detail' course.slug next_lesson.id %}"
-                                                   class="btn btn-primary btn-sm w-100 mb-2">
-                                                    <i class="bi bi-play-fill me-1"></i>Продолжи со учење
-                                                </a>
-                                            {% else %}
-                                                <div class="alert alert-success p-2 mb-2">
-                                                    <i class="bi bi-check-circle-fill me-1"></i>
-                                                    <small>Курсот е завршен!</small>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endif %}
+    {% if course.lessons.exists %}
+        {% with next_lesson=course.next_lesson %}
+            {% if next_lesson %}
+                <a href="{% url 'courses:lesson_detail' course.slug next_lesson.id %}"
+                   class="btn btn-primary btn-sm w-100 mb-2">
+                    <i class="bi bi-play-fill me-1"></i>Продолжи со учење
+                </a>
+            {% else %}
+                <div class="alert alert-success p-2 mb-2">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    <small>Курсот е завршен!</small>
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% endif %}
 
-                                    <a href="{{ course.get_absolute_url }}" class="btn btn-outline-secondary btn-sm w-100">
-                                        Детали за курсот
-                                    </a>
-                                {% endwith %}
+    <a href="{{ course.get_absolute_url }}" class="btn btn-outline-secondary btn-sm w-100">
+        Детали за курсот
+    </a>
+{% endwith %}
                             {% endif %}
                         </div>
                     </div>
@@ -172,5 +181,10 @@
 .badge.bg-маркетинг { background-color: #198754 !important; }
 .badge.bg-технологија { background-color: #dc3545 !important; }
 .badge.bg-дизајн { background-color: #fd7e14 !important; }
+
+/* Progress bar smooth transition */
+.progress-bar {
+    transition: width 0.6s ease, background-color 0.3s ease !important;
+}
 </style>
 {% endblock %}
