@@ -1,5 +1,6 @@
 <!-- templates/accounts/profile.html -->
 {% extends 'base.html' %}
+{% load l10n %}
 
 {% block title %}Мој профил - EduPlatform{% endblock %}
 
@@ -126,13 +127,24 @@
                             <div class="flex-grow-1">
                                 <h6 class="mb-1">{{ enrollment.course.title }}</h6>
                                 <p class="text-muted small mb-2">{{ enrollment.course.instructor.get_full_name }}</p>
-                                <div class="progress" style="height: 6px;">
-                                    <div class="progress-bar" role="progressbar"
-                                         style="width: {{ enrollment.progress_percentage }}%"
-                                         aria-valuenow="{{ enrollment.progress_percentage }}"
-                                         aria-valuemin="0" aria-valuemax="100"></div>
+
+                                <!-- PROGRESS BAR - ПЛАВА БОЈА -->
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted">Прогрес</small>
+                                        <small class="text-primary">
+                                            {{ enrollment.progress_percentage|floatformat:0 }}%
+                                        </small>
+                                    </div>
+                                    <div style="height: 6px; background-color: #e9ecef; border-radius: 3px; overflow: hidden;">
+                                        <div style="
+                                            width: {{ enrollment.progress_percentage|unlocalize }}%;
+                                            height: 100%;
+                                            background-color: #007bff;
+                                            transition: width 0.3s ease;
+                                        "></div>
+                                    </div>
                                 </div>
-                                <small class="text-muted">{{ enrollment.progress_percentage|floatformat:0 }}% завршено</small>
                             </div>
                         </div>
                         {% endfor %}
