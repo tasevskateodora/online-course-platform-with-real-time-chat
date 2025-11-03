@@ -9,6 +9,7 @@ class ChatRoom(models.Model):
     ROOM_TYPE_CHOICES = (
         ('course', 'Курс'),
         ('private', 'Приватен'),
+        ('group', 'Групен'),
         ('general', 'Општ'),
     )
 
