@@ -217,7 +217,7 @@
             </div>
 
             <!-- Admin Panel - САМО ЗА STAFF/SUPERUSER -->
-            {% if user.is_staff or user.is_superuser %}
+            {% if user.is_staff or user.is_superuser or user.user_type == 'admin' %}
             <div class="card shadow-sm mb-3">
                 <div class="card-header bg-danger text-white">
                     <h6 class="mb-0"><i class="bi bi-shield-fill-check me-2"></i>Админ панел</h6>
