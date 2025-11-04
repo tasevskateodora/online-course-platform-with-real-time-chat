@@ -14,67 +14,67 @@
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
 
-                        <!-- Наслов -->
+
                         <div class="mb-3">
                             <label class="form-label">Наслов на курсот*</label>
                             {{ form.title }}
                         </div>
 
-                        <!-- Опис -->
+
                         <div class="mb-3">
                             <label class="form-label">Опис*</label>
                             {{ form.description }}
                         </div>
 
-                        <!-- Категорија -->
+
                         <div class="mb-3">
                             <label class="form-label">Категорија*</label>
                             {{ form.category }}
                         </div>
 
-                        <!-- Тежина -->
+
                         <div class="mb-3">
                             <label class="form-label">Ниво на тежина*</label>
                             {{ form.difficulty }}
                         </div>
 
-                        <!-- Цена -->
+
                         <div class="mb-3">
                             <label class="form-label">Цена (денари)*</label>
                             {{ form.price }}
                         </div>
 
-                        <!-- Должина -->
+
                         <div class="mb-3">
                             <label class="form-label">Должина (часови)*</label>
                             {{ form.duration_hours }}
                         </div>
 
-                        <!-- Макс студенти -->
+
                         <div class="mb-3">
                             <label class="form-label">Максимален број студенти</label>
                             {{ form.max_students }}
                         </div>
 
-                        <!-- Слика -->
+
                         <div class="mb-3">
                             <label class="form-label">Слика за курсот</label>
                             {{ form.thumbnail }}
                         </div>
 
-                        <!-- Предуслови -->
+
                         <div class="mb-3">
                             <label class="form-label">Предуслови</label>
                             {{ form.requirements }}
                         </div>
 
-                        <!-- Што ќе научат -->
+
                         <div class="mb-3">
                             <label class="form-label">Што ќе научат студентите*</label>
                             {{ form.what_you_learn }}
                         </div>
 
-                        <!-- КОПЧИЊА - ВАЖНО! -->
+
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'courses:list' %}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left me-2"></i>Откажи

@@ -115,7 +115,7 @@ class PublicProfileView(TemplateView):
         return context
 
 
-# ==================== ADMIN VIEWS ====================
+
 
 class AdminUserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Admin view за листање на сите корисници"""
@@ -125,7 +125,7 @@ class AdminUserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 20
 
     def test_func(self):
-        # САМО staff или superuser
+
         user = self.request.user
         print(f"\n{'=' * 50}")
         print(f"DEBUG - AdminUserListView.test_func()")
@@ -138,7 +138,7 @@ class AdminUserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return user.is_staff or user.is_superuser
 
     def handle_no_permission(self):
-        print("❌ Access Denied - handle_no_permission called")
+        print("Access Denied - handle_no_permission called")
         messages.error(self.request, 'Немате пристап до оваа страница. Само администратори имаат пристап.')
         return redirect('dashboard:home')
 
@@ -148,7 +148,7 @@ class AdminUserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
             enrollments_count=Count('enrollments')
         ).order_by('-date_joined')
 
-        # Пребарување
+
         search = self.request.GET.get('search')
         if search:
             queryset = queryset.filter(
@@ -158,12 +158,12 @@ class AdminUserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
                 Q(last_name__icontains=search)
             )
 
-        # Филтрирање по тип
+
         user_type = self.request.GET.get('user_type')
         if user_type:
             queryset = queryset.filter(user_type=user_type)
 
-        # Филтрирање по активност
+
         is_active = self.request.GET.get('is_active')
         if is_active == 'true':
             queryset = queryset.filter(is_active=True)
@@ -196,12 +196,12 @@ class AdminDeleteUserView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
 
-        # Не дозволи да се избрише самиот себе
+
         if user == request.user:
             messages.error(request, 'Не можете да го избришете својот сопствен акаунт!')
             return redirect('accounts:admin_users')
 
-        # Не дозволи да се бришат суперкорисници
+
         if user.is_superuser:
             messages.error(request, 'Не можете да бришете суперадминистратори!')
             return redirect('accounts:admin_users')
@@ -225,17 +225,17 @@ class AdminToggleUserStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
 
-        # Не дозволи да се менува својот статус
+
         if user == request.user:
             messages.error(request, 'Не можете да го менувате својот статус!')
             return redirect('accounts:admin_users')
 
-        # Не дозволи да се менува статусот на суперкорисници
+
         if user.is_superuser:
             messages.error(request, 'Не можете да го менувате статусот на суперадминистратори!')
             return redirect('accounts:admin_users')
 
-        # Промени го статусот
+
         user.is_active = not user.is_active
         user.save()
 
@@ -264,14 +264,14 @@ class AdminUserDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         context['profile_user'] = user
         context['profile'] = profile
 
-        # Ако е инструктор
+
         if user.user_type == 'instructor':
             context['courses'] = user.courses_taught.all()
             context['total_students'] = sum(
                 course.get_enrolled_count() for course in context['courses']
             )
 
-        # Ако е студент
+
         if user.user_type == 'student':
             context['enrollments'] = user.enrollments.all()
             context['completed_courses'] = user.enrollments.filter(is_completed=True).count()

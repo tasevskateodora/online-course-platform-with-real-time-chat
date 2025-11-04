@@ -114,7 +114,7 @@
                     <form method="post" id="chatRoomForm">
                         {% csrf_token %}
 
-                        <!-- Име на собата -->
+
                         <div class="mb-3">
                             <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
                                 <i class="bi bi-chat-dots me-2"></i>{{ form.name.label }}
@@ -125,7 +125,7 @@
                             {% endif %}
                         </div>
 
-                        <!-- Тип на соба -->
+
                         <div class="mb-3">
                             <label for="roomType" class="form-label fw-bold">
                                 <i class="bi bi-layout-three-columns me-2"></i>{{ form.room_type.label }}
@@ -147,7 +147,7 @@
                             </small>
                         </div>
 
-                        <!-- Додај корисници -->
+
                         <div class="mb-4">
                             <label class="form-label fw-bold">
                                 <i class="bi bi-people me-2"></i>Додај корисници во собата
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedCount = document.getElementById('selectedCount');
     const countNumber = document.getElementById('countNumber');
 
-    // 🧩 Валидација за "Приватна" соба — само 1 корисник
+
     checkboxes.forEach(cb => cb.addEventListener('change', function() {
         if (roomTypeField && roomTypeField.value === 'private') {
             const selected = document.querySelectorAll('.participant-checkbox:checked');
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCount();
     }));
 
-    // Броење избрани
+
     function updateCount() {
         const checked = document.querySelectorAll('.participant-checkbox:checked').length;
         if (countNumber) countNumber.textContent = checked;
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Финална валидација пред submit
+
     const form = document.getElementById('chatRoomForm');
     if (form) {
         form.addEventListener('submit', function(e) {

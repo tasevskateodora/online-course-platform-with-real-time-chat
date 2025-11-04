@@ -59,14 +59,14 @@ class Course(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            # Генерирај slug од наслов
+
             base_slug = slugify(self.title, allow_unicode=False)
 
-            # Ако е празен (само кирилични букви), користи UUID
+
             if not base_slug or base_slug == '-':
                 base_slug = f'course-{uuid.uuid4().hex[:8]}'
 
-            # Провери уникатност
+
             slug = base_slug
             counter = 1
             while Course.objects.filter(slug=slug).exclude(pk=self.pk if self.pk else None).exists():
@@ -170,7 +170,7 @@ class Enrollment(models.Model):
             enrollment=self,
             is_completed=True
         ).count()
-        # Заокружи на 2 децимали за да избегнеме float precision грешки
+
         return round((completed_lessons / total_lessons) * 100, 2)
 
     def update_progress(self):
@@ -178,14 +178,14 @@ class Enrollment(models.Model):
 
         total_lessons = self.course.lessons.count()
 
-        # Провери дали е завршен само ако има лекции и прогресот е 100%
+
         if total_lessons > 0 and self.progress_percentage >= 100:
             self.is_completed = True
             if not self.completed_at:
                 from django.utils import timezone
                 self.completed_at = timezone.now()
         else:
-            # Ако има нови лекции или прогресот паднал под 100%, означи како незавршен
+
             self.is_completed = False
             self.completed_at = None
 

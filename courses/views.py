@@ -28,17 +28,17 @@ class CourseListView(ListView):
             enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
         )
 
-        # Филтрирање по категорија од URL
+
         category_id = self.kwargs.get('category_id')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # Филтрирање по категорија од форма
+
         category = self.request.GET.get('category')
         if category:
             queryset = queryset.filter(category_id=category)
 
-        # Пребарување
+
         search_query = self.request.GET.get('search')
         if search_query:
             queryset = queryset.filter(
@@ -48,19 +48,19 @@ class CourseListView(ListView):
                 Q(instructor__last_name__icontains=search_query)
             )
 
-        # Филтрирање по тежина
+
         difficulty = self.request.GET.get('difficulty')
         if difficulty:
             queryset = queryset.filter(difficulty=difficulty)
 
-        # Филтрирање по цена
+
         price_filter = self.request.GET.get('price')
         if price_filter == 'free':
             queryset = queryset.filter(price=0)
         elif price_filter == 'paid':
             queryset = queryset.filter(price__gt=0)
 
-        # Сортирање - поправка
+
         sort_by = self.request.GET.get('sort')
         if sort_by and sort_by in ['-created_at', 'title', '-enrolled_count', 'price', '-price']:
             queryset = queryset.order_by(sort_by)
@@ -75,7 +75,7 @@ class CourseListView(ListView):
         context['search_form'] = CourseSearchForm(self.request.GET or None)
         context['current_category'] = self.kwargs.get('category_id')
 
-        # Додај ги GET параметрите за пагинација
+
         get_copy = self.request.GET.copy()
         if 'page' in get_copy:
             get_copy.pop('page')
@@ -100,7 +100,7 @@ class CourseDetailView(DetailView):
         course = self.object
         user = self.request.user
 
-        # Провери дали корисникот е запишан
+
         context['is_enrolled'] = False
         context['enrollment'] = None
         if user.is_authenticated:
@@ -111,14 +111,14 @@ class CourseDetailView(DetailView):
             except Enrollment.DoesNotExist:
                 pass
 
-        # Лекции
+
         context['lessons'] = course.lessons.all().order_by('order')
 
-        # Статистики
+
         context['total_students'] = course.get_enrolled_count()
         context['completion_rate'] = course.get_completion_rate()
 
-        # Слични курсеви
+
         context['similar_courses'] = Course.objects.filter(
             category=course.category,
             status='published'
@@ -133,7 +133,7 @@ class EnrollCourseView(LoginRequiredMixin, View):
         course = get_object_or_404(Course, slug=slug)
         user = request.user
 
-        # Провери дали корисникот веќе е запишан
+
         enrollment, created = Enrollment.objects.get_or_create(
             student=user,
             course=course,
@@ -141,7 +141,7 @@ class EnrollCourseView(LoginRequiredMixin, View):
         )
 
         if created:
-            # Креирај чет соба за курсот ако не постои
+
             chat_room, room_created = ChatRoom.objects.get_or_create(
                 course=course,
                 defaults={
@@ -151,7 +151,7 @@ class EnrollCourseView(LoginRequiredMixin, View):
                 }
             )
 
-            # Додај го корисникот во чет собата
+
             chat_room.participants.add(user)
 
         else:
@@ -162,7 +162,7 @@ class EnrollCourseView(LoginRequiredMixin, View):
         return redirect('courses:detail', slug=course.slug)
 
     def get(self, request, slug):
-        # Ако некој пробува да пристапи преку GET, пренасочи на detail
+
         return redirect('courses:detail', slug=slug)
 
 
@@ -172,7 +172,7 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'lesson'
 
     def dispatch(self, request, *args, **kwargs):
-        # Провери пристап пред да продолжи
+
         course_slug = self.kwargs['slug']
         lesson_id = self.kwargs['lesson_id']
 
@@ -184,7 +184,7 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
 
         user = request.user
 
-        # Дозволи пристап само на инструкторот или на запишаните студенти
+
         if user != lesson.course.instructor:
             is_enrolled = Enrollment.objects.filter(
                 student=user,
@@ -193,7 +193,7 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
             ).exists()
 
             if not is_enrolled:
-                # Пренасочи кон detail страната наместо 404
+
                 return redirect('courses:detail', slug=course_slug)
 
         return super().dispatch(request, *args, **kwargs)
@@ -215,10 +215,10 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
         lesson = self.object
         user = self.request.user
 
-        # Сите лекции од курсот
+
         context['all_lessons'] = lesson.course.lessons.all().order_by('order')
 
-        # Прогрес на лекцијата
+
         context['is_completed'] = False
         if user.is_authenticated:
             try:
@@ -260,7 +260,7 @@ class LessonDetailView(LoginRequiredMixin, DetailView):
                 lesson_progress.completed_at = timezone.now()
                 lesson_progress.save()
 
-                # Ажурирај го прогресот на целиот курс
+
                 enrollment.update_progress()
 
         except Enrollment.DoesNotExist:
@@ -355,7 +355,7 @@ class LessonCreateView(InstructorRequiredMixin, CreateView):
         )
         form.instance.course = course
 
-        # Автоматски постави го редниот број
+
         last_lesson = course.lessons.order_by('-order').first()
         form.instance.order = (last_lesson.order + 1) if last_lesson else 1
 
@@ -391,7 +391,7 @@ class CourseDeleteView(InstructorRequiredMixin, DeleteView):
     success_url = reverse_lazy('courses:my_courses')
 
     def get_queryset(self):
-        # Дозволи само инструкторот да го брише својот курс
+
         return Course.objects.filter(instructor=self.request.user)
 
     def delete(self, request, *args, **kwargs):
@@ -406,11 +406,11 @@ class LessonDeleteView(InstructorRequiredMixin, DeleteView):
     pk_url_kwarg = 'lesson_id'
 
     def get_queryset(self):
-        # Дозволи само инструкторот да ги брише лекциите од својот курс
+
         return Lesson.objects.filter(course__instructor=self.request.user)
 
     def get_success_url(self):
-        # Врати го на manage страната на курсот
+
         return reverse_lazy('courses:manage', kwargs={'slug': self.object.course.slug})
 
     def delete(self, request, *args, **kwargs):

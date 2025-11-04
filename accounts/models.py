@@ -21,8 +21,8 @@ class User(AbstractUser):
     bio = models.TextField(max_length=500, blank=True)
     profile_picture = models.ImageField(
         upload_to='profile_pics/',
-        blank=True,  # Додадено
-        null=True    # Додадено
+        blank=True,
+        null=True
     )
     birth_date = models.DateField(null=True, blank=True)
     phone_number = models.CharField(max_length=15, blank=True)
@@ -32,7 +32,7 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-        # Ресајзирај ја сликата само ако постои
+
         if self.profile_picture and hasattr(self.profile_picture, 'path'):
             try:
                 if os.path.exists(self.profile_picture.path):
@@ -42,7 +42,7 @@ class User(AbstractUser):
                         img.thumbnail(output_size)
                         img.save(self.profile_picture.path)
             except Exception as e:
-                pass  # Ако има проблем со сликата, прескокни
+                pass
 
     def __str__(self):
         return f"{self.username} ({self.get_user_type_display()})"

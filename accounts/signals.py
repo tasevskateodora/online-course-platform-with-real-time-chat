@@ -11,10 +11,10 @@ from chat.models import UserChatSettings
 def create_user_profile(sender, instance, created, **kwargs):
     """Автоматски креирај профил и чет поставки за нов корисник"""
     if created:
-        # Креирај профил
+
         Profile.objects.create(user=instance)
 
-        # Креирај чет поставки
+
         UserChatSettings.objects.create(user=instance)
 
 

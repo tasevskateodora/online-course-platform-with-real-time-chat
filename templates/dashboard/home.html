@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Поздравен банер -->
+
     <div class="bg-primary text-white rounded p-4 mb-4">
         <div class="row align-items-center">
             <div class="col-md-8">
@@ -22,7 +22,7 @@
     <div class="row">
         <div class="col-md-8">
             {% if user.user_type == 'student' %}
-                <!-- Статистики за студент -->
+
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <div class="card bg-success text-white">
@@ -44,7 +44,7 @@
                     </div>
                 </div>
 
-                <!-- Моментални курсеви - САМО ПЛАВА БОЈА -->
+
                 {% if enrollments %}
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -59,7 +59,7 @@
                                         <h6 class="card-title">{{ enrollment.course.title }}</h6>
                                         <p class="text-muted small">{{ enrollment.course.instructor.get_full_name }}</p>
 
-                                        <!-- PROGRESS BAR - САМО ПЛАВА -->
+
                                         {% load l10n %}
                                         <div class="mb-2">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
@@ -99,7 +99,7 @@
                 {% endif %}
 
             {% elif user.user_type == 'instructor' %}
-                <!-- Статистики за инструктор -->
+
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <div class="card bg-primary text-white">
@@ -121,7 +121,7 @@
                     </div>
                 </div>
 
-                <!-- Мои курсеви -->
+
                 {% if my_courses %}
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -162,7 +162,7 @@
                 {% endif %}
             {% endif %}
 
-            <!-- Најнови курсеви -->
+
             {% if latest_courses %}
             <div class="card shadow-sm">
                 <div class="card-header">
@@ -191,7 +191,7 @@
 
         <!-- Sidebar -->
         <div class="col-md-4">
-            <!-- Брзи акции -->
+
             <div class="card shadow-sm mb-3">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-lightning-fill me-2"></i>Брзи акции</h6>
@@ -216,7 +216,7 @@
                 </div>
             </div>
 
-            <!-- Admin Panel - САМО ЗА STAFF/SUPERUSER -->
+
             {% if user.is_staff or user.is_superuser or user.user_type == 'admin' %}
             <div class="card shadow-sm mb-3">
                 <div class="card-header bg-danger text-white">

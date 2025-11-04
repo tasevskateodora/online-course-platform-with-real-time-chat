@@ -29,11 +29,11 @@ class ChatListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Креирај или земи кориснички поставки за чет
+
         chat_settings, created = UserChatSettings.objects.get_or_create(user=user)
         context['chat_settings'] = chat_settings
 
-        # Достапни курсеви за кои може да се креира чет
+
         if user.user_type == 'instructor':
             context['available_courses'] = Course.objects.filter(
                 instructor=user,
@@ -54,9 +54,9 @@ class ChatRoomView(LoginRequiredMixin, DetailView):
     def get_object(self):
         room = get_object_or_404(ChatRoom, id=self.kwargs['room_id'])
 
-        # Провери дали корисникот има пристап до собата
+
         if not room.participants.filter(id=self.request.user.id).exists():
-            # Ако е соба за курс, провери дали корисникот е запишан
+
             if room.room_type == 'course' and room.course:
                 if (self.request.user == room.course.instructor or
                         room.course.enrollments.filter(
@@ -75,30 +75,30 @@ class ChatRoomView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         room = self.object
 
-        # Последни пораки
+
         context['messages'] = Message.objects.filter(
             room=room
         ).select_related('sender').order_by('-timestamp')[:50][::-1]
 
-        # Учесници во собата
+
         context['participants'] = room.participants.all()
 
-        # Форма за пораки
+
         context['message_form'] = MessageForm()
 
-        # WebSocket URL
+
         context['room_group_name'] = room.get_room_group_name()
 
         return context
 
 
 class MessageListView(LoginRequiredMixin, View):
-    """API за зимање на пораки (за AJAX)"""
+    """API за земање на пораки (за AJAX)"""
 
     def get(self, request, room_id):
         room = get_object_or_404(ChatRoom, id=room_id)
 
-        # Провери пристап
+
         if not room.participants.filter(id=request.user.id).exists():
             return JsonResponse({'error': 'Немате пристап'}, status=403)
 
@@ -140,15 +140,15 @@ class CreateChatRoomView(LoginRequiredMixin, CreateView):
         form.instance.created_by = self.request.user
         response = super().form_valid(form)
 
-        # Додај го креаторот како учесник
+
         self.object.participants.add(self.request.user)
 
-        # Додај ги избраните корисници
+
         selected_participants = form.cleaned_data.get('participants')
         if selected_participants:
             self.object.participants.add(*selected_participants)
 
-        # Ако е соба за курс, додај ги сите запишани студенти (САМО за инструктори)
+
         if self.object.room_type == 'course' and self.object.course:
             from django.contrib.auth import get_user_model
             User = get_user_model()
@@ -171,12 +171,12 @@ class JoinChatRoomView(LoginRequiredMixin, View):
     def post(self, request, room_id):
         room = get_object_or_404(ChatRoom, id=room_id)
 
-        # Провери дали може да се приклучи
+
         if room.room_type == 'private':
             messages.error(request, 'Не можете да се приклучите во приватна соба.')
             return redirect('chat:list')
 
-        # Провери за курс соби
+
         if room.room_type == 'course' and room.course:
             if not (request.user == room.course.instructor or
                     room.course.enrollments.filter(
@@ -186,7 +186,7 @@ class JoinChatRoomView(LoginRequiredMixin, View):
                 messages.error(request, 'Немате пристап до оваа соба.')
                 return redirect('chat:list')
 
-        # Додај го корисникот
+
         room.participants.add(request.user)
         messages.success(request, f'Успешно се приклучивте во "{room.name}"!')
 

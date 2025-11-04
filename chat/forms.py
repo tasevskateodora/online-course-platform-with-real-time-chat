@@ -11,7 +11,7 @@ User = get_user_model()
 
 
 class ChatRoomForm(forms.ModelForm):
-    # Поле за избор на корисници
+
     participants = forms.ModelMultipleChoiceField(
         queryset=User.objects.none(),
         widget=forms.CheckboxSelectMultiple,
@@ -45,18 +45,18 @@ class ChatRoomForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if user:
-            # Ако е инструктор, прикажи ги курсевите
+
             if user.user_type == 'instructor':
                 self.fields['course'].queryset = Course.objects.filter(
                     instructor=user,
                     status='published'
                 )
             else:
-                # За студенти, сокриј го курс полето
+
                 self.fields['course'].queryset = Course.objects.none()
                 self.fields['course'].widget = forms.HiddenInput()
 
-            # СИТЕ корисници можат да ги видат другите корисници
+
             self.fields['participants'].queryset = User.objects.filter(
                 is_active=True
             ).exclude(id=user.id).order_by('first_name', 'last_name', 'username')
@@ -72,7 +72,7 @@ class ChatRoomForm(forms.ModelForm):
         course = cleaned_data.get('course')
         user = self.initial.get('user') if hasattr(self, 'initial') else None
 
-        # Само инструктори можат да креираат курс соби
+
         if room_type == 'course':
             if not (user and user.user_type == 'instructor'):
                 raise forms.ValidationError('Само инструкторите можат да креираат курс соби.')

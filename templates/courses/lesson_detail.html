@@ -90,9 +90,9 @@
                         </div>
                     {% endif %}
 
-                    <!-- ПОПРАВЕНА Lesson Navigation -->
+
                     <div class="lesson-navigation d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
-                        <!-- Претходна лекција -->
+
                         <div>
                             {% with previous=lesson.get_previous_lesson %}
                                 {% if previous %}
@@ -101,7 +101,7 @@
                                         <i class="bi bi-arrow-left me-2"></i>Претходна лекција
                                     </a>
                                 {% else %}
-                                    <!-- Ако е прва лекција, покажи назад кон курс -->
+
                                     <a href="{% url 'courses:detail' lesson.course.slug %}"
                                        class="btn btn-outline-secondary">
                                         <i class="bi bi-arrow-left me-2"></i>Назад кон курс
@@ -110,14 +110,14 @@
                             {% endwith %}
                         </div>
 
-                        <!-- Прогрес индикатор -->
+
                         <div class="text-center">
                             <small class="text-muted">
                                 Лекција {{ lesson.order }} од {{ all_lessons.count }}
                             </small>
                         </div>
 
-                        <!-- Следна лекција -->
+
                         <div>
                             {% with next=lesson.get_next_lesson %}
                                 {% if next %}
@@ -126,7 +126,7 @@
                                         Следна лекција<i class="bi bi-arrow-right ms-2"></i>
                                     </a>
                                 {% else %}
-                                    <!-- Последна лекција - назад кон курс -->
+
                                     <a href="{% url 'courses:detail' lesson.course.slug %}"
                                        class="btn btn-success">
                                         <i class="bi bi-trophy me-2"></i>Заврши курс
@@ -181,7 +181,7 @@
                                     {% if l.id == lesson.id %}
                                         <i class="bi bi-eye-fill text-primary"></i>
                                     {% else %}
-                                        <!-- Провери дали е завршена лекцијата -->
+
                                         {% for progress in lesson_progress %}
                                             {% if progress.lesson.id == l.id and progress.is_completed %}
                                                 <i class="bi bi-check-circle-fill text-success"></i>

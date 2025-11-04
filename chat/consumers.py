@@ -15,17 +15,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_group_name = f'chat_{self.room_id}'
         self.user = self.scope['user']
 
-        # Провери дали корисникот е автентициран
+
         if not self.user.is_authenticated:
             await self.close()
             return
 
-        # Провери дали корисникот има пристап до собата
+
         if not await self.user_has_access():
             await self.close()
             return
 
-        # Приклучи се во group
+
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -33,7 +33,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
-        # Извести дека корисникот се приклучил
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -44,7 +44,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def disconnect(self, close_code):
-        # Извести дека корисникот си заминал
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -54,7 +54,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        # Отстрани од group
+
         await self.channel_layer.group_discard(
             self.room_group_name,
             self.channel_name
@@ -84,10 +84,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not content:
             return
 
-        # Зачувај ја пораката во базата
+
         message = await self.save_message(content, reply_to_id)
 
-        # Испрати ја пораката до сите во групата
+
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -145,7 +145,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def typing_indicator(self, event):
-        # Не испраќај typing indicator назад до истиот корисник
+
         if event['user_id'] != self.user.id:
             await self.send(text_data=json.dumps({
                 'type': 'typing',

@@ -10,7 +10,7 @@
             <h3><i class="bi bi-chat-dots-fill me-2 text-primary"></i>Чет соби</h3>
             <p class="text-muted">Комуницирајте со други студенти и инструктори</p>
         </div>
-        <!-- СИТЕ корисници можат да креираат соба -->
+
         <a href="{% url 'chat:create_room' %}" class="btn btn-success">
             <i class="bi bi-plus-circle me-2"></i>Создај соба
         </a>
@@ -70,7 +70,7 @@
                     {% endfor %}
                 </div>
 
-                <!-- Pagination ако има повеќе соби -->
+
                 {% if is_paginated %}
                 <nav aria-label="Page navigation" class="mt-4">
                     <ul class="pagination justify-content-center">
@@ -163,7 +163,7 @@
                 </div>
             </div>
 
-            <!-- Available Courses (само за инструктори) -->
+            <!-- Available Courses  -->
             {% if user.user_type == 'instructor' and available_courses %}
             <div class="card shadow-sm">
                 <div class="card-header bg-success text-white">
@@ -184,7 +184,7 @@
             </div>
             {% endif %}
 
-            <!-- Online Users (опционално) -->
+            <!-- Online Users  -->
             <div class="card shadow-sm mt-3">
                 <div class="card-header">
                     <h6 class="mb-0">
@@ -196,7 +196,7 @@
                     <p class="small text-muted mb-2">Моментално активни:</p>
                     <div class="d-flex align-items-center">
                         <div class="avatar-group">
-                            <!-- Ова може да го имплементираш со WebSocket -->
+
                             <span class="badge bg-success">{{ chat_rooms|length }}+ соби активни</span>
                         </div>
                     </div>
@@ -232,13 +232,13 @@
     align-items: center;
 }
 
-/* Badge стилови */
+
 .badge {
     font-weight: 600;
     padding: 6px 12px;
 }
 
-/* Card header градиенти */
+
 .card-header.bg-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
 }

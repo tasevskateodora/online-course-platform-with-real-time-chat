@@ -13,7 +13,7 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Статистики за корисникот
+
         if user.user_type == 'student':
             context['enrollments'] = Enrollment.objects.filter(
                 student=user,
@@ -40,12 +40,12 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
                 instructor=user
             ).count()
 
-        # Најнови курсеви
+
         context['latest_courses'] = Course.objects.filter(
             status='published'
         ).order_by('-created_at')[:6]
 
-        # Активни чет соби
+
         context['active_chat_rooms'] = ChatRoom.objects.filter(
             participants=user,
             is_active=True
@@ -62,14 +62,14 @@ class MyCoursesView(LoginRequiredMixin, TemplateView):
         user = self.request.user
 
         if user.user_type == 'instructor':
-            # За инструктори - прикажи ги курсевите што ги предаваат
+
             courses = Course.objects.filter(
                 instructor=user
             ).annotate(
                 enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
             ).order_by('-created_at')
         else:
-            # За студенти - прикажи ги курсевите на кои се запишани
+
             enrollments = Enrollment.objects.filter(
                 student=user,
                 is_active=True

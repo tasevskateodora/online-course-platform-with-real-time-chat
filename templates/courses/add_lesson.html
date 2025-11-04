@@ -14,7 +14,7 @@
                     <small class="text-muted">{{ course.title }}</small>
                 </div>
                 <div class="card-body">
-                    <!-- Прикажи глобални грешки од формата -->
+
                     {% if form.non_field_errors %}
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -28,7 +28,7 @@
                         </div>
                     {% endif %}
 
-                    <!-- Динамички прикажани грешки од JavaScript -->
+
                     <div id="validation-errors" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <strong>Грешка при креирање на лекција:</strong>
@@ -105,11 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorAlert = document.getElementById('validation-errors');
     const errorList = document.getElementById('error-list');
 
-    // Додај визуелни индикатори за релевантни полиња
+
     function highlightRelevantFields() {
         const lessonType = lessonTypeField.value;
 
-        // Ресетирај ги сите полиња
+
         [videoUrlField, videoFileField, pdfFileField, contentField].forEach(field => {
             if (field) {
                 const wrapper = field.closest('.mb-3') || field.closest('.form-group');
@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Означи ги релевантните полиња
+
         if (lessonType === 'video') {
             [videoUrlField, videoFileField].forEach(field => {
                 if (field) {
@@ -146,13 +146,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Валидација пред submit
+
     form.addEventListener('submit', function(e) {
         const lessonType = lessonTypeField.value;
         const errors = [];
 
         if (lessonType === 'video') {
-            // Провери дали се пополнети само видео полиња
+
             if (pdfFileField && pdfFileField.files.length > 0) {
                 errors.push('За видео лекции не треба да прикачувате PDF документ.');
             }
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 errors.push('За видео лекции не треба да внесувате текстуална содржина.');
             }
         } else if (lessonType === 'text') {
-            // Провери дали се пополнети само текст полиња
+
             if (videoUrlField && videoUrlField.value.trim() !== '') {
                 errors.push('За текст лекции не треба да внесувате видео URL.');
             }
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 errors.push('За текст лекции не треба да прикачувате PDF документ.');
             }
         } else if (lessonType === 'pdf') {
-            // Провери дали се пополнети само PDF полиња
+
             if (videoUrlField && videoUrlField.value.trim() !== '') {
                 errors.push('За PDF лекции не треба да внесувате видео URL.');
             }
@@ -186,7 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (errors.length > 0) {
             e.preventDefault();
 
-            // Прикажи ги грешките
             errorList.innerHTML = '';
             errors.forEach(error => {
                 const li = document.createElement('li');
@@ -196,12 +195,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             errorAlert.style.display = 'block';
 
-            // Скролај до грешката
+
             errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             return false;
         } else {
-            // Скриј ја грешката ако нема грешки
+
             errorAlert.style.display = 'none';
         }
     });
@@ -209,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (lessonTypeField) {
         lessonTypeField.addEventListener('change', function() {
             highlightRelevantFields();
-            // Скриј ја грешката кога се менува типот
+
             errorAlert.style.display = 'none';
         });
         highlightRelevantFields(); // Initial call
@@ -218,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Анимација за грешка */
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }

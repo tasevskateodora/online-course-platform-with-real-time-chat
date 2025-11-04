@@ -118,21 +118,21 @@ class LessonForm(forms.ModelForm):
         pdf_file = cleaned_data.get('pdf_file')
         content = cleaned_data.get('content')
 
-        # Валидација за видео лекции
+
         if lesson_type == 'video':
             if not video_url and not video_file:
                 raise forms.ValidationError(
                     'За видео лекции морате да внесете URL или да прикачите видео фајл.'
                 )
 
-        # Валидација за PDF лекции
+
         if lesson_type == 'pdf':
             if not pdf_file:
                 raise forms.ValidationError(
                     'За PDF лекции морате да прикачите PDF документ.'
                 )
 
-        # Валидација за текст лекции
+
         if lesson_type == 'text':
             if not content:
                 raise forms.ValidationError(

@@ -24,7 +24,7 @@ class UserRegisterForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Македонски лабели
+
         self.fields['username'].label = 'Корисничко име'
         self.fields['username'].help_text = 'Задолжително. 150 или помалку знаци. Единствено букви, бројки и @/./+/-/_.'
         self.fields['email'].label = 'Е-пошта'
@@ -33,7 +33,7 @@ class UserRegisterForm(UserCreationForm):
         self.fields['password2'].label = 'Потврди лозинка'
         self.fields['password2'].help_text = 'Внесете ја истата лозинка како претходно, за верификација.'
 
-        # Додај Bootstrap класи
+
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
             if field_name == 'user_type':

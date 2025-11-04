@@ -17,7 +17,7 @@ def create_course_chat_room(sender, instance, created, **kwargs):
             created_by=instance.instructor
         )
 
-        # Додај го инструкторот како учесник
+
         chat_room.participants.add(instance.instructor)
 
 
@@ -29,7 +29,7 @@ def add_student_to_course_chat(sender, instance, created, **kwargs):
             chat_room = instance.course.chat_room
             chat_room.participants.add(instance.student)
         except ChatRoom.DoesNotExist:
-            # Ако нема чет соба, креирај ја
+
             chat_room = ChatRoom.objects.create(
                 name=f'Чет за {instance.course.title}',
                 room_type='course',
@@ -55,13 +55,13 @@ def update_enrollments_on_new_lesson(sender, instance, created, **kwargs):
     Кога се креира нова лекција, ажурирај го прогресот на сите запишани студенти
     """
     if created:
-        # Најди ги сите активни enrollments за овој курс
+
         enrollments = Enrollment.objects.filter(
             course=instance.course,
             is_active=True
         )
 
-        # Ажурирај го прогресот за секој enrollment
+
         for enrollment in enrollments:
             enrollment.update_progress()
 
@@ -71,12 +71,12 @@ def update_enrollments_on_lesson_delete(sender, instance, **kwargs):
     """
     Кога се брише лекција, ажурирај го прогресот на сите запишани студенти
     """
-    # Најди ги сите активни enrollments за овој курс
+
     enrollments = Enrollment.objects.filter(
         course=instance.course,
         is_active=True
     )
 
-    # Ажурирај го прогресот за секој enrollment
+
     for enrollment in enrollments:
         enrollment.update_progress()
