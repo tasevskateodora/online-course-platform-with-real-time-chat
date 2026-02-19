@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Резултати од квизот - EduPlatform{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Results Header -->
+            <div class="card shadow-sm mb-4 {% if attempt.passed %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-header {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %} text-white py-4">
+                    <div class="text-center">
+                        <h2 class="mb-2">
+                            <i class="bi bi-{% if attempt.passed %}check-circle{% else %}x-circle{% endif %}-fill me-2"></i>
+                            {% if attempt.passed %}Честитки! Го положивте квизот!{% else %}Не го положивте квизот{% endif %}
+                        </h2>
+                        <p class="mb-0 fs-5">{{ attempt.quiz.lesson.title }}</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <div class="p-3 bg-light rounded">
+                                <h2 class="{% if attempt.passed %}text-success{% else %}text-danger{% endif %} mb-1">
+                                    {{ attempt.score|floatformat:0 }}%
+                                </h2>
+                                <p class="text-muted mb-0 small">Ваш резултат</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <div class="p-3 bg-light rounded">
+                                <h2 class="text-primary mb-1">{{ attempt.quiz.passing_score }}%</h2>
+                                <p class="text-muted mb-0 small">Потребно за положување</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded">
+                                <h2 class="text-info mb-1">{{ attempt.quiz.questions.count }}</h2>
+                                <p class="text-muted mb-0 small">Вкупно прашања</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if not attempt.passed %}
+                    <div class="alert alert-warning mt-4 mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Обидете се повторно!</strong> Прочитајте ја лекцијата уште еднаш и пробајте да го подобрите резултатот.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Detailed Results -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-list-check me-2"></i>Детални резултати</h5>
+                </div>
+                <div class="card-body">
+                    {% for student_answer in attempt.student_answers.all %}
+                    <div class="mb-4 pb-4 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="mb-0 flex-grow-1">
+                                <span class="badge {% if student_answer.is_correct %}bg-success{% else %}bg-danger{% endif %} me-2">
+                                    Прашање {{ forloop.counter }}
+                                </span>
+                                {{ student_answer.question.question_text }}
+                            </h6>
+                            {% if student_answer.is_correct %}
+                                <i class="bi bi-check-circle-fill text-success fs-4 ms-2"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle-fill text-danger fs-4 ms-2"></i>
+                            {% endif %}
+                        </div>
+
+                        <div class="ms-4">
+                            <p class="mb-2">
+                                <strong class="text-muted">Ваш одговор:</strong><br>
+                                <span class="{% if student_answer.is_correct %}text-success{% else %}text-danger{% endif %}">
+                                    {{ student_answer.selected_answer.answer_text }}
+                                </span>
+                            </p>
+
+                            {% if not student_answer.is_correct %}
+                                <p class="mb-2">
+                                    <strong class="text-muted">Точен одговор:</strong><br>
+                                    <span class="text-success">
+                                        {% for answer in student_answer.question.answers.all %}
+                                            {% if answer.is_correct %}{{ answer.answer_text }}{% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </p>
+                            {% endif %}
+
+                            {% if student_answer.question.explanation %}
+                                <div class="alert alert-info mt-2 mb-0">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <small>{{ student_answer.question.explanation }}</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if not attempt.passed %}
+                        <a href="{% url 'courses:quiz_take' attempt.quiz.lesson.course.slug attempt.quiz.id %}"
+                           class="btn btn-warning btn-lg">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Обиди се повторно
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'courses:lesson_detail' attempt.quiz.lesson.course.slug attempt.quiz.lesson.id %}"
+                           class="btn btn-primary btn-lg">
+                            <i class="bi bi-arrow-left me-2"></i>Назад кон лекција
+                        </a>
+                        <a href="{% url 'courses:detail' attempt.quiz.lesson.course.slug %}"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-book me-2"></i>Назад кон курс
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

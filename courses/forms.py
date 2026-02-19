@@ -88,23 +88,29 @@ class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
         fields = [
-            'title', 'lesson_type', 'content', 'video_url', 'video_file', 'pdf_file',
-            'duration_minutes',
+            'title', 'content', 'lesson_type', 'video_url', 'video_file', 'pdf_file',
+            'duration_minutes', 'is_free'
         ]
         labels = {
             'title': 'Наслов на лекцијата',
-            'content': 'Содржина на лекцијата',
+            'content': 'Содржина на лекцијата (транскрипт/белешки)',
             'lesson_type': 'Тип на лекција',
             'video_url': 'URL на видео',
             'video_file': 'Прикачи видео фајл',
             'pdf_file': 'Прикачи PDF документ',
             'duration_minutes': 'Должина (во минути)',
+            'is_free': 'Бесплатен преглед'
         }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'content': forms.Textarea(attrs={'rows': 6, 'class': 'form-control'}),
+            'content': forms.Textarea(attrs={
+                'rows': 8,
+                'class': 'form-control',
+                'placeholder': 'За видео лекции: внесете транскрипт или детални белешки (минимум 250 зборови за AI квиз генерирање)'
+            }),
             'lesson_type': forms.Select(attrs={'class': 'form-select'}),
-            'video_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'video_url': forms.URLInput(
+                attrs={'class': 'form-control', 'placeholder': 'https://www.youtube.com/watch?v=...'}),
             'video_file': forms.FileInput(attrs={'class': 'form-control'}),
             'pdf_file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf'}),
             'duration_minutes': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
@@ -118,25 +124,48 @@ class LessonForm(forms.ModelForm):
         pdf_file = cleaned_data.get('pdf_file')
         content = cleaned_data.get('content')
 
-
+        # Валидација за видео лекции
         if lesson_type == 'video':
+            # Провери дали има видео
             if not video_url and not video_file:
                 raise forms.ValidationError(
-                    'За видео лекции морате да внесете URL или да прикачите видео фајл.'
+                    'За видео лекции морате да внесете YouTube URL или да прикачите видео фајл.'
                 )
 
+            # 🆕 НОВО: Провери дали има доволно текст за квиз генерирање
+            if content:
+                word_count = len(content.split())
+                if word_count < 250:
+                    raise forms.ValidationError(
+                        f'За автоматско генерирање на квиз, видео лекциите треба да имаат транскрипт или белешки со минимум 250 зборови. '
+                        f'Моментално има {word_count} зборови. Додадете уште {250 - word_count} зборови.'
+                    )
+            else:
+                self.add_error('content',
+                               'За видео лекции е потребно да внесете транскрипт или детални белешки '
+                               '(минимум 250 зборови) за да може AI да генерира квиз прашања.'
+                               )
 
-        if lesson_type == 'pdf':
+        # Валидација за PDF лекции
+        elif lesson_type == 'pdf':
             if not pdf_file:
                 raise forms.ValidationError(
                     'За PDF лекции морате да прикачите PDF документ.'
                 )
 
-
-        if lesson_type == 'text':
+        # Валидација за текст лекции
+        elif lesson_type == 'text':
             if not content:
                 raise forms.ValidationError(
                     'За текст лекции морате да внесете содржина.'
+                )
+
+            # 🆕 НОВО: Провери за минимум зборови
+            word_count = len(content.split())
+            if word_count < 250:
+                raise forms.ValidationError(
+                    f'За автоматско генерирање на квиз, текст лекциите треба да имаат минимум 250 зборови. '
+                    f'Моментално има {word_count} зборови. Додадете уште {250 - word_count} зборови.'
                 )
 
         return cleaned_data

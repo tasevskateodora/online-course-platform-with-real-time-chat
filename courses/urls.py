@@ -27,4 +27,10 @@ urlpatterns = [
     path('<slug:slug>/delete/', views.CourseDeleteView.as_view(), name='delete'),
 
 path('<slug:slug>/lessons/<int:lesson_id>/delete/', views.LessonDeleteView.as_view(), name='delete_lesson'),
+
+# courses/urls.py - додадете
+path('<slug:slug>/lessons/<int:lesson_id>/generate-quiz/', views.GenerateQuizView.as_view(), name='generate_quiz'),
+path('<slug:slug>/quiz/<int:quiz_id>/', views.QuizTakeView.as_view(), name='quiz_take'),
+path('<slug:slug>/quiz/<int:quiz_id>/submit/', views.QuizSubmitView.as_view(), name='quiz_submit'),
+path('<slug:slug>/quiz/results/<int:attempt_id>/', views.QuizResultView.as_view(), name='quiz_result'),
 ]

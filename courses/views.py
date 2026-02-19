@@ -1,20 +1,25 @@
-# courses/views.py
-
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, View
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
-from django.db.models import Q, Count, Avg
-from django.http import JsonResponse, Http404
+from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Course, Category, Lesson, Enrollment, LessonProgress
-from .forms import CourseForm, LessonForm, CourseSearchForm
-from chat.models import ChatRoom
-from django.views.generic import DeleteView
-from django.views import View
+
+from .models import Course, Category, Lesson, Enrollment, LessonProgress, Quiz, Question, Answer, QuizAttempt, \
+    StudentAnswer
+from .forms import CourseForm, LessonForm
+from .ai_quiz_generator import extract_text_from_pdf, generate_quiz_from_text
 
 
+# --- MIXINS ---
+class InstructorRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and (self.request.user.user_type in ['instructor', 'admin'])
+
+
+# --- КУРС ПРИКАЗИ ---
 class CourseListView(ListView):
     model = Course
     template_name = 'courses/list.html'
@@ -22,257 +27,36 @@ class CourseListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = Course.objects.filter(status='published').select_related(
-            'instructor', 'category'
-        ).annotate(
+        return Course.objects.filter(status='published').annotate(
             enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
-        )
+        ).order_by('-created_at')
 
-
-        category_id = self.kwargs.get('category_id')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-
-
-        category = self.request.GET.get('category')
-        if category:
-            queryset = queryset.filter(category_id=category)
-
-
-        search_query = self.request.GET.get('search')
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) |
-                Q(description__icontains=search_query) |
-                Q(instructor__first_name__icontains=search_query) |
-                Q(instructor__last_name__icontains=search_query)
-            )
-
-
-        difficulty = self.request.GET.get('difficulty')
-        if difficulty:
-            queryset = queryset.filter(difficulty=difficulty)
-
-
-        price_filter = self.request.GET.get('price')
-        if price_filter == 'free':
-            queryset = queryset.filter(price=0)
-        elif price_filter == 'paid':
-            queryset = queryset.filter(price__gt=0)
-
-
-        sort_by = self.request.GET.get('sort')
-        if sort_by and sort_by in ['-created_at', 'title', '-enrolled_count', 'price', '-price']:
-            queryset = queryset.order_by(sort_by)
-        else:
-            queryset = queryset.order_by('-created_at')  # Default сортирање
-
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.all()
-        context['search_form'] = CourseSearchForm(self.request.GET or None)
-        context['current_category'] = self.kwargs.get('category_id')
-
-
-        get_copy = self.request.GET.copy()
-        if 'page' in get_copy:
-            get_copy.pop('page')
-        context['get_params'] = get_copy.urlencode()
-
-        return context
 
 class CourseDetailView(DetailView):
     model = Course
     template_name = 'courses/detail.html'
     context_object_name = 'course'
 
-    def get_object(self):
-        return get_object_or_404(
-            Course.objects.select_related('instructor', 'category'),
-            slug=self.kwargs['slug'],
-            status='published'
-        )
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        course = self.object
-        user = self.request.user
-
-
-        context['is_enrolled'] = False
-        context['enrollment'] = None
-        if user.is_authenticated:
-            try:
-                enrollment = Enrollment.objects.get(student=user, course=course, is_active=True)
-                context['is_enrolled'] = True
-                context['enrollment'] = enrollment
-            except Enrollment.DoesNotExist:
-                pass
-
-
-        context['lessons'] = course.lessons.all().order_by('order')
-
-
-        context['total_students'] = course.get_enrolled_count()
-        context['completion_rate'] = course.get_completion_rate()
-
-
-        context['similar_courses'] = Course.objects.filter(
-            category=course.category,
-            status='published'
-        ).exclude(id=course.id)[:4]
-
-        return context
-
-
-class EnrollCourseView(LoginRequiredMixin, View):
-
-    def post(self, request, slug):
-        course = get_object_or_404(Course, slug=slug)
-        user = request.user
-
-
-        enrollment, created = Enrollment.objects.get_or_create(
-            student=user,
-            course=course,
-            defaults={'is_active': True}
-        )
-
-        if created:
-
-            chat_room, room_created = ChatRoom.objects.get_or_create(
-                course=course,
-                defaults={
-                    'name': f'Чет за {course.title}',
-                    'room_type': 'course',
-                    'created_by': course.instructor
-                }
-            )
-
-
-            chat_room.participants.add(user)
-
-        else:
-            if not enrollment.is_active:
-                enrollment.is_active = True
-                enrollment.save()
-
-        return redirect('courses:detail', slug=course.slug)
-
-    def get(self, request, slug):
-
-        return redirect('courses:detail', slug=slug)
-
-
-class LessonDetailView(LoginRequiredMixin, DetailView):
-    model = Lesson
-    template_name = 'courses/lesson_detail.html'
-    context_object_name = 'lesson'
-
-    def dispatch(self, request, *args, **kwargs):
-
-        course_slug = self.kwargs['slug']
-        lesson_id = self.kwargs['lesson_id']
-
-        lesson = get_object_or_404(
-            Lesson.objects.select_related('course'),
-            id=lesson_id,
-            course__slug=course_slug
-        )
-
-        user = request.user
-
-
-        if user != lesson.course.instructor:
-            is_enrolled = Enrollment.objects.filter(
-                student=user,
-                course=lesson.course,
-                is_active=True
+        if self.request.user.is_authenticated:
+            context['is_enrolled'] = Enrollment.objects.filter(
+                student=self.request.user, course=self.object, is_active=True
             ).exists()
+        context['lessons'] = self.object.lessons.all().order_by('order')
+        return context
 
-            if not is_enrolled:
 
-                return redirect('courses:detail', slug=course_slug)
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_object(self):
-        course_slug = self.kwargs['slug']
-        lesson_id = self.kwargs['lesson_id']
-
-        lesson = get_object_or_404(
-            Lesson.objects.select_related('course'),
-            id=lesson_id,
-            course__slug=course_slug
-        )
-
-        return lesson
+class CourseManageView(InstructorRequiredMixin, DetailView):
+    model = Course
+    template_name = 'courses/manage.html'
+    context_object_name = 'course'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        lesson = self.object
-        user = self.request.user
-
-
-        context['all_lessons'] = lesson.course.lessons.all().order_by('order')
-
-
-        context['is_completed'] = False
-        if user.is_authenticated:
-            try:
-                enrollment = Enrollment.objects.get(
-                    student=user,
-                    course=lesson.course,
-                    is_active=True
-                )
-                lesson_progress, created = LessonProgress.objects.get_or_create(
-                    enrollment=enrollment,
-                    lesson=lesson
-                )
-                context['is_completed'] = lesson_progress.is_completed
-                context['enrollment'] = enrollment
-            except Enrollment.DoesNotExist:
-                pass
-
+        context['lessons'] = self.object.lessons.all().select_related('quiz').order_by('order')
+        context['enrollments'] = self.object.enrollments.all().select_related('student')
         return context
-
-    def post(self, request, *args, **kwargs):
-        """Означи лекција како завршена"""
-        lesson = self.get_object()
-        user = request.user
-
-        try:
-            enrollment = Enrollment.objects.get(
-                student=user,
-                course=lesson.course,
-                is_active=True
-            )
-
-            lesson_progress, created = LessonProgress.objects.get_or_create(
-                enrollment=enrollment,
-                lesson=lesson
-            )
-
-            if not lesson_progress.is_completed:
-                lesson_progress.is_completed = True
-                lesson_progress.completed_at = timezone.now()
-                lesson_progress.save()
-
-
-                enrollment.update_progress()
-
-        except Enrollment.DoesNotExist:
-            pass
-
-        return redirect('courses:lesson_detail', slug=lesson.course.slug, lesson_id=lesson.id)
-
-
-# Instructor Views
-class InstructorRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.user_type in ['instructor', 'admin']
 
 
 class CourseCreateView(InstructorRequiredMixin, CreateView):
@@ -282,8 +66,10 @@ class CourseCreateView(InstructorRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.instructor = self.request.user
-        messages.success(self.request, 'Курсот е успешно креиран!')
         return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('courses:instructor_courses')
 
 
 class CourseUpdateView(InstructorRequiredMixin, UpdateView):
@@ -291,48 +77,19 @@ class CourseUpdateView(InstructorRequiredMixin, UpdateView):
     form_class = CourseForm
     template_name = 'courses/edit.html'
 
-    def get_queryset(self):
-        return Course.objects.filter(instructor=self.request.user)
-
-    def form_valid(self, form):
-        messages.success(self.request, 'Курсот е успешно ажуриран!')
-        return super().form_valid(form)
+    def get_success_url(self):
+        return reverse('courses:manage', kwargs={'slug': self.object.slug})
 
 
-class InstructorCoursesView(InstructorRequiredMixin, ListView):
+class CourseDeleteView(InstructorRequiredMixin, DeleteView):
     model = Course
-    template_name = 'courses/instructor_courses.html'
-    context_object_name = 'courses'
+    template_name = 'courses/course_confirm_delete.html'
 
-    def get_queryset(self):
-        return Course.objects.filter(
-            instructor=self.request.user
-        ).annotate(
-            enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
-        ).order_by('-created_at')
+    def get_success_url(self):
+        return reverse_lazy('courses:instructor_courses')
 
 
-class CourseManageView(InstructorRequiredMixin, DetailView):
-    model = Course
-    template_name = 'courses/manage.html'
-    context_object_name = 'course'
-
-    def get_queryset(self):
-        return Course.objects.filter(instructor=self.request.user)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        course = self.object
-
-        context['lessons'] = course.lessons.all().order_by('order')
-        context['enrollments'] = Enrollment.objects.filter(
-            course=course,
-            is_active=True
-        ).select_related('student').order_by('-enrolled_at')
-
-        return context
-
-
+# --- ЛЕКЦИЈА ПРИКАЗИ ---
 class LessonCreateView(InstructorRequiredMixin, CreateView):
     model = Lesson
     form_class = LessonForm
@@ -340,26 +97,20 @@ class LessonCreateView(InstructorRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['course'] = get_object_or_404(
-            Course,
-            slug=self.kwargs['slug'],
-            instructor=self.request.user
-        )
+        context['course'] = get_object_or_404(Course, slug=self.kwargs['slug'])
         return context
 
     def form_valid(self, form):
-        course = get_object_or_404(
-            Course,
-            slug=self.kwargs['slug'],
-            instructor=self.request.user
-        )
+        course = get_object_or_404(Course, slug=self.kwargs['slug'], instructor=self.request.user)
         form.instance.course = course
 
+        # Автоматски сетирај го order ако не е сетиран
+        if not form.instance.order:
+            # Земи го следниот достапен број
+            last_lesson = course.lessons.order_by('-order').first()
+            form.instance.order = (last_lesson.order + 1) if last_lesson else 1
 
-        last_lesson = course.lessons.order_by('-order').first()
-        form.instance.order = (last_lesson.order + 1) if last_lesson else 1
-
-        messages.success(self.request, 'Лекцијата е успешно додадена!')
+        messages.success(self.request, f'Лекцијата "{form.instance.title}" е успешно додадена!')
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -370,51 +121,152 @@ class LessonUpdateView(InstructorRequiredMixin, UpdateView):
     model = Lesson
     form_class = LessonForm
     template_name = 'courses/edit_lesson.html'
-    pk_url_kwarg = 'lesson_id'
 
-    def get_queryset(self):
-        course_slug = self.kwargs['slug']
-        return Lesson.objects.filter(course__slug=course_slug, course__instructor=self.request.user)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['course'] = self.object.course
-        return context
+    def get_object(self):
+        return get_object_or_404(Lesson, id=self.kwargs['lesson_id'], course__slug=self.kwargs['slug'])
 
     def get_success_url(self):
         return reverse('courses:manage', kwargs={'slug': self.kwargs['slug']})
 
 
-class CourseDeleteView(InstructorRequiredMixin, DeleteView):
-    model = Course
-    template_name = 'courses/course_confirm_delete.html'
-    success_url = reverse_lazy('courses:my_courses')
-
-    def get_queryset(self):
-
-        return Course.objects.filter(instructor=self.request.user)
-
-    def delete(self, request, *args, **kwargs):
-        course = self.get_object()
-        messages.success(request, f'Курсот "{course.title}" е успешно избришан!')
-        return super().delete(request, *args, **kwargs)
-
-
 class LessonDeleteView(InstructorRequiredMixin, DeleteView):
     model = Lesson
     template_name = 'courses/lesson_confirm_delete.html'
-    pk_url_kwarg = 'lesson_id'
 
-    def get_queryset(self):
-
-        return Lesson.objects.filter(course__instructor=self.request.user)
+    def get_object(self):
+        return get_object_or_404(Lesson, id=self.kwargs['lesson_id'], course__slug=self.kwargs['slug'])
 
     def get_success_url(self):
+        return reverse('courses:manage', kwargs={'slug': self.kwargs['slug']})
 
-        return reverse_lazy('courses:manage', kwargs={'slug': self.object.course.slug})
 
-    def delete(self, request, *args, **kwargs):
+class LessonDetailView(LoginRequiredMixin, DetailView):
+    model = Lesson
+    template_name = 'courses/lesson_detail.html'
+    context_object_name = 'lesson'
+
+    def get_object(self):
+        return get_object_or_404(Lesson, id=self.kwargs['lesson_id'], course__slug=self.kwargs['slug'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         lesson = self.get_object()
-        messages.success(request, f'Лекцијата "{lesson.title}" е успешно избришана!')
-        return super().delete(request, *args, **kwargs)
+        context['quiz_obj'] = Quiz.objects.filter(lesson=lesson).first()
+        context['all_lessons'] = lesson.course.lessons.all().order_by('order')
+        return context
 
+
+# --- КВИЗ ЛОГИКА (QuizTake, QuizSubmit, QuizResult) ---
+
+class QuizTakeView(LoginRequiredMixin, DetailView):
+    model = Quiz
+    template_name = 'courses/quiz_take.html'
+    pk_url_kwarg = 'quiz_id'
+    context_object_name = 'quiz'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # ВАЖНО: Ги праќаме прашањата со prefetch за да ги добиеме и одговорите
+        context['questions'] = self.object.questions.prefetch_related('answers').all()
+        return context
+
+
+class QuizSubmitView(LoginRequiredMixin, View):
+    def post(self, request, slug, quiz_id):
+        quiz = get_object_or_404(Quiz, id=quiz_id)
+        questions = quiz.questions.all()
+        score = 0
+        total = questions.count()
+
+        attempt = QuizAttempt.objects.create(
+            quiz=quiz, student=request.user, score=0, max_score=total
+        )
+
+        for question in questions:
+            ans_id = request.POST.get(f'question_{question.id}')
+            if ans_id:
+                answer = get_object_or_404(Answer, id=ans_id)
+                if answer.is_correct: score += 1
+                StudentAnswer.objects.create(
+                    attempt=attempt, question=question,
+                    selected_answer=answer, is_correct=answer.is_correct
+                )
+
+        final_score = (score / total) * 100 if total > 0 else 0
+        attempt.score = final_score
+        attempt.passed = final_score >= quiz.passing_score
+        attempt.save()
+        return redirect('courses:quiz_result', slug=slug, attempt_id=attempt.id)
+
+
+class QuizResultView(LoginRequiredMixin, DetailView):
+    model = QuizAttempt
+    template_name = 'courses/quiz_result.html'
+    context_object_name = 'attempt'
+
+    def get_object(self):
+        return get_object_or_404(QuizAttempt, id=self.kwargs['attempt_id'], student=self.request.user)
+
+
+# --- AI ГЕНЕРАТОР ---
+
+class GenerateQuizView(InstructorRequiredMixin, View):
+    def post(self, request, slug, lesson_id):
+        lesson = get_object_or_404(Lesson, id=lesson_id, course__slug=slug)
+        Quiz.objects.filter(lesson=lesson).delete()
+
+        quiz_text = ""
+        if lesson.lesson_type == 'pdf' and lesson.pdf_file:
+            quiz_text = extract_text_from_pdf(lesson.pdf_file)
+        if not quiz_text or len(quiz_text) < 10:
+            quiz_text = f"Title: {lesson.title}. Content: {lesson.content}"
+
+        try:
+            raw_response = generate_quiz_from_text(quiz_text)
+            if raw_response:
+                if isinstance(raw_response, str):
+                    if "```json" in raw_response:
+                        raw_response = raw_response.split("```json")[1].split("```")[0].strip()
+                    quiz_data = json.loads(raw_response)
+                else:
+                    quiz_data = raw_response
+
+                q_list = quiz_data.get('questions') or quiz_data.get('quiz')
+                if q_list:
+                    quiz = Quiz.objects.create(lesson=lesson, title=f"Квиз: {lesson.title}")
+                    for idx, q_item in enumerate(q_list, 1):
+                        q_txt = q_item.get('question_text') or q_item.get('question')
+                        if q_txt:
+                            question = Question.objects.create(quiz=quiz, question_text=q_txt, order=idx)
+                            ans_list = q_item.get('answers') or q_item.get('options')
+                            for a_idx, a_item in enumerate(ans_list, 1):
+                                Answer.objects.create(
+                                    question=question,
+                                    answer_text=a_item.get('answer_text') or a_item.get('text'),
+                                    is_correct=bool(a_item.get('is_correct') or a_item.get('correct')),
+                                    order=a_idx
+                                )
+                    messages.success(request, "Квизот е успешно генериран!")
+            else:
+                messages.error(request, "AI не врати податоци.")
+        except Exception as e:
+            messages.error(request, f"Грешка: {str(e)}")
+        return redirect('courses:manage', slug=slug)
+
+
+# --- ОСТАНАТО ---
+
+class InstructorCoursesView(InstructorRequiredMixin, ListView):
+    model = Course
+    template_name = 'courses/instructor_courses.html'
+    context_object_name = 'courses'
+
+    def get_queryset(self):
+        return Course.objects.filter(instructor=self.request.user)
+
+
+class EnrollCourseView(LoginRequiredMixin, View):
+    def post(self, request, slug):
+        course = get_object_or_404(Course, slug=slug)
+        Enrollment.objects.get_or_create(student=request.user, course=course, defaults={'is_active': True})
+        return redirect('courses:detail', slug=slug)

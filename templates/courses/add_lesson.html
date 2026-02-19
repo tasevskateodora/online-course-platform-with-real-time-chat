@@ -52,44 +52,39 @@
                 </div>
             </div>
 
-            <!-- Help Card -->
-            <div class="card shadow-sm mt-3">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Совети за создавање лекции</h6>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-warning mb-3">
-                        <i class="bi bi-exclamation-circle me-2"></i>
-                        <strong>Важно:</strong> Пополнете ги само полињата што се релевантни за избраниот тип на лекција.
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <h6><i class="bi bi-play-circle text-primary me-2"></i>Видео лекции</h6>
-                            <ul class="small">
-                                <li>Внесете YouTube/Vimeo URL или прикачете фајл</li>
-                                <li>Оптимална должина: 5-15 минути</li>
-                                <li><strong>Не пополнувајте PDF или текст полиња</strong></li>
-                            </ul>
-                        </div>
-                        <div class="col-md-4">
-                            <h6><i class="bi bi-file-text text-success me-2"></i>Текст лекции</h6>
-                            <ul class="small">
-                                <li>Пополнете го полето "Содржина"</li>
-                                <li>Структурирајте ја содржината</li>
-                                <li><strong>Не пополнувајте видео или PDF полиња</strong></li>
-                            </ul>
-                        </div>
-                        <div class="col-md-4">
-                            <h6><i class="bi bi-file-pdf text-danger me-2"></i>PDF лекции</h6>
-                            <ul class="small">
-                                <li>Прикачете PDF документ</li>
-                                <li>Максимална големина: 10MB</li>
-                                <li><strong>Не пополнувајте видео или текст полиња</strong></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+           <!-- Help Card -->
+<div class="card shadow-sm mt-3">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Совети за создавање лекции</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <h6><i class="bi bi-play-circle text-primary me-2"></i>Видео лекции</h6>
+                <ul class="small">
+                    <li>Внесете YouTube/Vimeo URL или прикачете фајл</li>
+                    <li><strong>Задолжително:</strong> Додадете транскрипт или белешки (минимум 250 зборови)</li>
+                    <li>Оптимална должина: 5-15 минути</li>
+                </ul>
             </div>
+            <div class="col-md-4">
+                <h6><i class="bi bi-file-text text-success me-2"></i>Текст лекции</h6>
+                <ul class="small">
+                    <li>Пополнете го полето "Содржина"</li>
+                    <li><strong>Минимум 250 зборови</strong> </li>
+                    <li>Структурирајте ја содржината</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6><i class="bi bi-file-pdf text-danger me-2"></i>PDF лекции</h6>
+                <ul class="small">
+                    <li>Прикачете PDF документ</li>
+                    <li>Максимална големина: 10MB</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -105,23 +100,42 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorAlert = document.getElementById('validation-errors');
     const errorList = document.getElementById('error-list');
 
-
-    function highlightRelevantFields() {
+    // 🆕 Функција за enable/disable на полиња според типот
+    function updateFieldsAvailability() {
         const lessonType = lessonTypeField.value;
 
-
+        // Resetирај сè
         [videoUrlField, videoFileField, pdfFileField, contentField].forEach(field => {
             if (field) {
+                field.disabled = false;
+                field.required = false;
                 const wrapper = field.closest('.mb-3') || field.closest('.form-group');
                 if (wrapper) {
-                    wrapper.classList.remove('border', 'border-primary', 'border-success', 'border-danger', 'border-2', 'p-3', 'rounded', 'bg-light');
+                    wrapper.classList.remove('border', 'border-primary', 'border-success', 'border-danger',
+                                           'border-warning', 'border-2', 'p-3', 'rounded', 'bg-light', 'opacity-50');
+                    wrapper.style.opacity = '1';
                 }
             }
         });
 
-
         if (lessonType === 'video') {
-            [videoUrlField, videoFileField].forEach(field => {
+            // ✅ Видео: Само видео URL/фајл + текст (задолжителен)
+            // Овозможи: video URL, video file, content
+            contentField.required = true;
+
+            // Оневозможи: PDF
+            if (pdfFileField) {
+                pdfFileField.disabled = true;
+                pdfFileField.value = '';
+                const wrapper = pdfFileField.closest('.mb-3') || pdfFileField.closest('.form-group');
+                if (wrapper) {
+                    wrapper.classList.add('opacity-50');
+                    wrapper.style.opacity = '0.5';
+                }
+            }
+
+            // Highlight активни полиња
+            [videoUrlField, videoFileField, contentField].forEach(field => {
                 if (field) {
                     const wrapper = field.closest('.mb-3') || field.closest('.form-group');
                     if (wrapper) {
@@ -129,14 +143,60 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+
         } else if (lessonType === 'text') {
+            // ✅ Текст: Само содржина
+            contentField.required = true;
+
+            // Оневозможи: video URL, video file, PDF
+            [videoUrlField, videoFileField, pdfFileField].forEach(field => {
+                if (field) {
+                    field.disabled = true;
+                    if (field.type === 'file') {
+                        field.value = '';
+                    } else {
+                        field.value = '';
+                    }
+                    const wrapper = field.closest('.mb-3') || field.closest('.form-group');
+                    if (wrapper) {
+                        wrapper.classList.add('opacity-50');
+                        wrapper.style.opacity = '0.5';
+                    }
+                }
+            });
+
+            // Highlight активно поле
             if (contentField) {
                 const wrapper = contentField.closest('.mb-3') || contentField.closest('.form-group');
                 if (wrapper) {
                     wrapper.classList.add('border', 'border-success', 'border-2', 'p-3', 'rounded', 'bg-light');
                 }
             }
+
         } else if (lessonType === 'pdf') {
+            // ✅ PDF: Само PDF фајл
+            if (pdfFileField) {
+                pdfFileField.required = true;
+            }
+
+            // Оневозможи: video URL, video file, content
+            [videoUrlField, videoFileField, contentField].forEach(field => {
+                if (field) {
+                    field.disabled = true;
+                    if (field.type === 'file') {
+                        field.value = '';
+                    } else {
+                        field.value = '';
+                    }
+                    const wrapper = field.closest('.mb-3') || field.closest('.form-group');
+                    if (wrapper) {
+                        wrapper.classList.add('opacity-50');
+                        wrapper.style.opacity = '0.5';
+                    }
+                }
+            });
+
+            // Highlight активно поле
             if (pdfFileField) {
                 const wrapper = pdfFileField.closest('.mb-3') || pdfFileField.closest('.form-group');
                 if (wrapper) {
@@ -144,80 +204,111 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+
+        // Ажурирај word counter
+        if (typeof updateWordCount === 'function') {
+            updateWordCount();
+        }
     }
 
-
+    // Валидација при submit
     form.addEventListener('submit', function(e) {
         const lessonType = lessonTypeField.value;
         const errors = [];
 
         if (lessonType === 'video') {
-
-            if (pdfFileField && pdfFileField.files.length > 0) {
-                errors.push('За видео лекции не треба да прикачувате PDF документ.');
+            if (!videoUrlField.value.trim() && (!videoFileField.files || videoFileField.files.length === 0)) {
+                errors.push('За видео лекции морате да внесете видео URL или да прикачите видео фајл.');
             }
-            if (contentField && contentField.value.trim() !== '') {
-                errors.push('За видео лекции не треба да внесувате текстуална содржина.');
+            if (!contentField.value.trim()) {
+                errors.push('За видео лекции мора да внесете транскрипт или белешки.');
             }
         } else if (lessonType === 'text') {
-
-            if (videoUrlField && videoUrlField.value.trim() !== '') {
-                errors.push('За текст лекции не треба да внесувате видео URL.');
-            }
-            if (videoFileField && videoFileField.files.length > 0) {
-                errors.push('За текст лекции не треба да прикачувате видео фајл.');
-            }
-            if (pdfFileField && pdfFileField.files.length > 0) {
-                errors.push('За текст лекции не треба да прикачувате PDF документ.');
+            if (!contentField.value.trim()) {
+                errors.push('За текст лекции мора да внесете содржина.');
             }
         } else if (lessonType === 'pdf') {
-
-            if (videoUrlField && videoUrlField.value.trim() !== '') {
-                errors.push('За PDF лекции не треба да внесувате видео URL.');
-            }
-            if (videoFileField && videoFileField.files.length > 0) {
-                errors.push('За PDF лекции не треба да прикачувате видео фајл.');
-            }
-            if (contentField && contentField.value.trim() !== '') {
-                errors.push('За PDF лекции не треба да внесувате текстуална содржина.');
+            if (!pdfFileField.files || pdfFileField.files.length === 0) {
+                errors.push('За PDF лекции мора да прикачите PDF документ.');
             }
         }
 
         if (errors.length > 0) {
             e.preventDefault();
-
             errorList.innerHTML = '';
             errors.forEach(error => {
                 const li = document.createElement('li');
                 li.textContent = error;
                 errorList.appendChild(li);
             });
-
             errorAlert.style.display = 'block';
-
-
             errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
             return false;
         } else {
-
             errorAlert.style.display = 'none';
         }
     });
 
+    // Event listener за промена на тип
     if (lessonTypeField) {
         lessonTypeField.addEventListener('change', function() {
-            highlightRelevantFields();
-
+            updateFieldsAvailability();
             errorAlert.style.display = 'none';
         });
-        highlightRelevantFields(); // Initial call
+        updateFieldsAvailability(); // Initial call
+    }
+
+    // 🆕 Word Counter
+    if (contentField) {
+        const wordCountDiv = document.createElement('div');
+        wordCountDiv.className = 'form-text mt-2 fw-bold';
+        wordCountDiv.id = 'word-count-display';
+        contentField.parentElement.appendChild(wordCountDiv);
+
+        function updateWordCount() {
+            const text = contentField.value.trim();
+            const wordCount = text ? text.split(/\s+/).filter(word => word.length > 0).length : 0;
+            const lessonType = lessonTypeField ? lessonTypeField.value : '';
+
+            // Покажи word counter само за video и text типови
+            if ((lessonType === 'video' || lessonType === 'text') && !contentField.disabled) {
+                const remaining = Math.max(0, 250 - wordCount);
+
+                if (wordCount >= 250) {
+                    wordCountDiv.innerHTML = `
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        <span class="text-success">${wordCount} зборови</span> - Доволно за AI квиз генерирање! ✨
+                    `;
+                } else if (wordCount > 0) {
+                    wordCountDiv.innerHTML = `
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                        <span class="text-warning">${wordCount} зборови</span> - Потребни уште <span class="text-danger">${remaining} зборови</span> за AI квиз 🤖
+                    `;
+                } else {
+                    wordCountDiv.innerHTML = `
+                        <i class="bi bi-info-circle me-1"></i>
+                        Внесете минимум <strong>250 зборови</strong> за автоматско генерирање на квиз прашања
+                    `;
+                }
+                wordCountDiv.style.display = 'block';
+            } else {
+                wordCountDiv.style.display = 'none';
+            }
+        }
+
+        // Make updateWordCount globally accessible
+        window.updateWordCount = updateWordCount;
+
+        contentField.addEventListener('input', updateWordCount);
+        if (lessonTypeField) {
+            lessonTypeField.addEventListener('change', updateWordCount);
+        }
+        updateWordCount();
     }
 });
 </script>
 
 <style>
-
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -226,6 +317,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .error-shake {
     animation: shake 0.5s;
+}
+
+/* Визуелна индикација за disabled полиња */
+.opacity-50 {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Smooth transitions */
+.mb-3, .form-group {
+    transition: all 0.3s ease;
 }
 </style>
 {% endblock %}

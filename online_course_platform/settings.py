@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -129,3 +130,6 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:home'
 LOGOUT_REDIRECT_URL = 'accounts:logout'
+
+# AI Integration
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')

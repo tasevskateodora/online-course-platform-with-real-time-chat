@@ -5,25 +5,31 @@
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
-        <!-- Lesson Content -->
         <div class="col-lg-9">
-            <div class="card shadow-sm">
-                <div class="card-header">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h4 class="mb-0">{{ lesson.title }}</h4>
+                            <h4 class="mb-0 fw-bold">{{ lesson.title }}</h4>
                             <small class="text-muted">{{ lesson.course.title }}</small>
                         </div>
-                        <div>
+                        <div class="d-flex align-items-center">
+                            {% if quiz_obj %}
+                                <a href="{% url 'courses:quiz_take' lesson.course.slug quiz_obj.id %}"
+                                   class="btn btn-primary me-2 shadow-sm">
+                                    <i class="bi bi-question-circle-fill me-1"></i>Реши квиз
+                                </a>
+                            {% endif %}
+
                             {% if not is_completed %}
                                 <form method="post" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-success">
+                                    <button type="submit" class="btn btn-success shadow-sm">
                                         <i class="bi bi-check-circle me-1"></i>Означи како завршено
                                     </button>
                                 </form>
                             {% else %}
-                                <span class="badge bg-success fs-6">
+                                <span class="badge bg-success-subtle text-success border border-success px-3 py-2 fs-6">
                                     <i class="bi bi-check-circle-fill me-1"></i>Завршено
                                 </span>
                             {% endif %}
@@ -31,185 +37,66 @@
                     </div>
                 </div>
 
-                <div class="card-body">
-                    <!-- Video Content -->
-                    {% if lesson.lesson_type == 'video' %}
-                        {% if lesson.video_url %}
-                            <div class="ratio ratio-16x9 mb-4">
-                                {% if 'youtube.com' in lesson.video_url or 'youtu.be' in lesson.video_url %}
-                                    {% if 'watch?v=' in lesson.video_url %}
-                                        <iframe src="https://www.youtube.com/embed/{{ lesson.video_url|cut:'https://www.youtube.com/watch?v=' }}" allowfullscreen></iframe>
-                                    {% else %}
-                                        <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
-                                    {% endif %}
-                                {% elif 'vimeo.com' in lesson.video_url %}
-                                    <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
-                                {% else %}
-                                    <iframe src="{{ lesson.video_url }}" allowfullscreen></iframe>
-                                {% endif %}
-                            </div>
-                        {% elif lesson.video_file %}
-                            <div class="ratio ratio-16x9 mb-4">
-                                <video controls class="w-100">
-                                    <source src="{{ lesson.video_file.url }}" type="video/mp4">
-                                    Вашиот прелистувач не поддржува видео елемент.
-                                </video>
-                            </div>
-                        {% endif %}
-                    {% endif %}
-
-                    <!-- PDF Content -->
-                    {% if lesson.lesson_type == 'pdf' %}
-                        {% if lesson.pdf_file %}
-                            <div class="card bg-light mb-4">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <i class="bi bi-file-pdf-fill text-danger me-3" style="font-size: 3rem;"></i>
-                                        <div>
-                                            <h5 class="mb-1">PDF Документ</h5>
-                                            <p class="text-muted mb-0">Кликнете за да го преземете или прегледате</p>
-                                        </div>
-                                    </div>
-                                    <a href="{{ lesson.pdf_file.url }}" target="_blank" class="btn btn-danger w-100">
-                                        <i class="bi bi-download me-2"></i>Преземи / Прегледај PDF
-                                    </a>
+                <div class="card-body p-4">
+                    {% if lesson.lesson_type == 'pdf' and lesson.pdf_file %}
+                        <div class="card bg-light mb-4 border-0 shadow-sm p-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger me-3"></i>
+                                <div>
+                                    <h5 class="mb-0">Материјал за лекцијата</h5>
+                                    <a href="{{ lesson.pdf_file.url }}" target="_blank" class="small">Преземи PDF</a>
                                 </div>
                             </div>
-
-                            <!-- PDF Preview -->
-                            <div class="border rounded p-2 mb-4" style="height: 600px;">
-                                <iframe src="{{ lesson.pdf_file.url }}" width="100%" height="100%" style="border: none;"></iframe>
-                            </div>
-                        {% endif %}
+                        </div>
+                        <div class="border rounded shadow-sm mb-4" style="height: 600px;">
+                            <embed src="{{ lesson.pdf_file.url }}" width="100%" height="100%" type="application/pdf">
+                        </div>
                     {% endif %}
 
-                    <!-- Text Content -->
                     {% if lesson.content %}
-                        <div class="lesson-content">
+                        <div class="lesson-content mb-5 bg-white p-4 rounded border shadow-sm">
                             {{ lesson.content|linebreaks }}
                         </div>
                     {% endif %}
 
-
-                    <div class="lesson-navigation d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
-
-                        <div>
-                            {% with previous=lesson.get_previous_lesson %}
-                                {% if previous %}
-                                    <a href="{% url 'courses:lesson_detail' lesson.course.slug previous.id %}"
-                                       class="btn btn-outline-primary">
-                                        <i class="bi bi-arrow-left me-2"></i>Претходна лекција
-                                    </a>
-                                {% else %}
-
-                                    <a href="{% url 'courses:detail' lesson.course.slug %}"
-                                       class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-left me-2"></i>Назад кон курс
-                                    </a>
-                                {% endif %}
-                            {% endwith %}
+                    {% if quiz_obj%}
+                        <div class="card border-0 bg-primary-subtle mt-5 shadow-sm">
+                            <div class="card-body d-flex justify-content-between align-items-center p-4">
+                                <div>
+                                    <h5 class="card-title text-primary-emphasis fw-bold mb-1">
+                                        <i class="bi bi-magic me-2"></i>Провери го знаењето
+                                    </h5>
+                                    <p class="card-text text-primary-emphasis mb-0">Овој квиз е направен за да ти помогне да го совладаш материјалот.</p>
+                                </div>
+                                <a href="{% url 'courses:quiz_take' lesson.course.slug quiz_obj.id %}" class="btn btn-primary px-4 py-2 fw-bold shadow">
+                                    Започни тест
+                                </a>
+                            </div>
                         </div>
-
-
-                        <div class="text-center">
-                            <small class="text-muted">
-                                Лекција {{ lesson.order }} од {{ all_lessons.count }}
-                            </small>
-                        </div>
-
-
-                        <div>
-                            {% with next=lesson.get_next_lesson %}
-                                {% if next %}
-                                    <a href="{% url 'courses:lesson_detail' lesson.course.slug next.id %}"
-                                       class="btn btn-primary">
-                                        Следна лекција<i class="bi bi-arrow-right ms-2"></i>
-                                    </a>
-                                {% else %}
-
-                                    <a href="{% url 'courses:detail' lesson.course.slug %}"
-                                       class="btn btn-success">
-                                        <i class="bi bi-trophy me-2"></i>Заврши курс
-                                    </a>
-                                {% endif %}
-                            {% endwith %}
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar -->
         <div class="col-lg-3">
-            {% load l10n %}
-
-            <!-- Course Progress -->
             {% if enrollment %}
-            <div class="card shadow-sm mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Прогрес</h6>
-                </div>
-                <div class="card-body text-center">
-                    <h2 class="text-primary">{{ enrollment.progress_percentage|floatformat:1 }}%</h2>
-                    <div style="height: 10px; background-color: #e9ecef; border-radius: 0.25rem; overflow: hidden;">
-                        <div style="width: {{ enrollment.progress_percentage|unlocalize }}%; height: 100%; background-color: #007bff;"></div>
-                    </div>
-                    <small class="text-muted">Завршени {{ enrollment.progress_percentage|floatformat:1 }}% од курсот</small>
-                </div>
+            <div class="card shadow-sm border-0 mb-4 bg-primary text-white p-4 text-center">
+                <h6 class="small fw-bold opacity-75">ТВОЈОТ ПРОГРЕС</h6>
+                <h2 class="display-6 fw-bold">{{ enrollment.progress_percentage|floatformat:0 }}%</h2>
             </div>
             {% endif %}
 
-            <!-- All Lessons -->
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-list-ul me-2"></i>Сите лекции</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for l in all_lessons %}
+            <div class="card shadow-sm border-0">
+                <div class="list-group list-group-flush">
+                    {% for l in all_lessons %}
                         <a href="{% url 'courses:lesson_detail' lesson.course.slug l.id %}"
                            class="list-group-item list-group-item-action {% if l.id == lesson.id %}active{% endif %}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ l.order }}. {{ l.title }}</h6>
-                                    <small>
-                                        <i class="bi bi-{% if l.lesson_type == 'video' %}play-circle{% elif l.lesson_type == 'text' %}file-text{% elif l.lesson_type == 'pdf' %}file-pdf{% else %}clipboard-check{% endif %} me-1"></i>
-                                        {{ l.duration_minutes }} мин
-                                    </small>
-                                </div>
-                                <div>
-                                    {% if l.id == lesson.id %}
-                                        <i class="bi bi-eye-fill text-primary"></i>
-                                    {% else %}
-
-                                        {% for progress in lesson_progress %}
-                                            {% if progress.lesson.id == l.id and progress.is_completed %}
-                                                <i class="bi bi-check-circle-fill text-success"></i>
-                                            {% endif %}
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                            </div>
+                            {{ l.order }}. {{ l.title }}
                         </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Course Chat -->
-            <div class="card shadow-sm mt-3">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-chat-fill me-2"></i>Чет</h6>
-                </div>
-                <div class="card-body">
-                    <p class="small text-muted mb-3">Поставувајте прашања и дискутирајте.</p>
-                    <a href="{% url 'chat:list' %}" class="btn btn-primary btn-sm w-100">
-                        <i class="bi bi-chat-dots-fill me-2"></i>Влез во чет
-                    </a>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
