@@ -21,40 +21,70 @@
         <!-- Filters Sidebar -->
         <div class="col-md-3">
             <div class="card shadow-sm">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h6 class="mb-0"><i class="bi bi-funnel-fill me-2"></i>Филтри</h6>
                 </div>
                 <div class="card-body">
-                    <form method="get">
+                    <form method="get" id="filter-form">
+                        <!-- Search -->
                         <div class="mb-3">
-                            <label class="form-label">Пребарај</label>
-                            {{ search_form.search }}
+                            <label class="form-label fw-bold">Пребарај</label>
+                            <input type="text" name="search" class="form-control"
+                                   placeholder="Наслов, инструктор..."
+                                   value="{{ search_query }}">
                         </div>
 
+                        <!-- Category -->
                         <div class="mb-3">
-                            <label class="form-label">Категорија</label>
-                            {{ search_form.category }}
+                            <label class="form-label fw-bold">Категорија</label>
+                            <select name="category" class="form-select">
+                                <option value="">Сите категории</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ cat.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
                         </div>
 
+                        <!-- Difficulty -->
                         <div class="mb-3">
-                            <label class="form-label">Ниво на тежина</label>
-                            {{ search_form.difficulty }}
+                            <label class="form-label fw-bold">Ниво на тежина</label>
+                            <select name="difficulty" class="form-select">
+                                <option value="">Сите нивоа</option>
+                                <option value="beginner" {% if selected_difficulty == 'beginner' %}selected{% endif %}>Почетник</option>
+                                <option value="intermediate" {% if selected_difficulty == 'intermediate' %}selected{% endif %}>Средно</option>
+                                <option value="advanced" {% if selected_difficulty == 'advanced' %}selected{% endif %}>Напредно</option>
+                            </select>
                         </div>
 
+                        <!-- Price -->
                         <div class="mb-3">
-                            <label class="form-label">Цена</label>
-                            {{ search_form.price }}
+                            <label class="form-label fw-bold">Цена</label>
+                            <select name="price" class="form-select">
+                                <option value="">Сите</option>
+                                <option value="free" {% if selected_price == 'free' %}selected{% endif %}>Бесплатни</option>
+                                <option value="paid" {% if selected_price == 'paid' %}selected{% endif %}>Платени</option>
+                            </select>
                         </div>
 
+                        <!-- Sort -->
                         <div class="mb-3">
-                            <label class="form-label">Сортирај по</label>
-                            {{ search_form.sort }}
+                            <label class="form-label fw-bold">Сортирај по</label>
+                            <select name="sort" class="form-select">
+                                <option value="-created_at" {% if selected_sort == '-created_at' %}selected{% endif %}>Најнови</option>
+                                <option value="created_at" {% if selected_sort == 'created_at' %}selected{% endif %}>Најстари</option>
+                                <option value="price" {% if selected_sort == 'price' %}selected{% endif %}>Цена: Ниска-Висока</option>
+                                <option value="-price" {% if selected_sort == '-price' %}selected{% endif %}>Цена: Висока-Ниска</option>
+                                <option value="title" {% if selected_sort == 'title' %}selected{% endif %}>Наслов: А-Ш</option>
+                            </select>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">
+                        <!-- Buttons -->
+                        <button type="submit" class="btn btn-primary w-100 mb-2">
                             <i class="bi bi-search me-2"></i>Пребарај
                         </button>
-                        <a href="{% url 'courses:list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        <a href="{% url 'courses:list' %}" class="btn btn-outline-secondary w-100">
                             <i class="bi bi-arrow-clockwise me-2"></i>Ресетирај
                         </a>
                     </form>
@@ -63,23 +93,21 @@
 
             <!-- Categories -->
             <div class="card shadow-sm mt-3">
-                <div class="card-header">
+                <div class="card-header bg-white">
                     <h6 class="mb-0"><i class="bi bi-grid-fill me-2"></i>Категории</h6>
                 </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        <a href="{% url 'courses:list' %}"
-                           class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">
-                            Сите категории
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:list' %}"
+                       class="list-group-item list-group-item-action {% if not selected_category %}active{% endif %}">
+                        Сите категории
+                    </a>
+                    {% for cat in categories %}
+                        <a href="?category={{ cat.id }}"
+                           class="list-group-item list-group-item-action {% if selected_category == cat.id|stringformat:'s' %}active{% endif %}">
+                            {% if cat.icon %}<i class="bi bi-{{ cat.icon }} me-2"></i>{% endif %}
+                            {{ cat.name }}
                         </a>
-                        {% for category in categories %}
-                        <a href="{% url 'courses:by_category' category.id %}"
-                           class="list-group-item list-group-item-action {% if current_category == category.id %}active{% endif %}">
-                            {% if category.icon %}<i class="bi bi-{{ category.icon }} me-2"></i>{% endif %}
-                            {{ category.name }}
-                        </a>
-                        {% endfor %}
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -99,22 +127,16 @@
                                 <img src="{{ course.thumbnail.url }}" class="card-img-top"
                                      alt="{{ course.title }}" style="height: 200px; object-fit: cover;">
                             {% else %}
-                                <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                                <div class="card-img-top bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
                                      style="height: 200px;">
-                                    <i class="bi bi-book text-muted" style="font-size: 3rem;"></i>
+                                    <i class="bi bi-book text-primary" style="font-size: 3rem;"></i>
                                 </div>
                             {% endif %}
 
                             <div class="card-body d-flex flex-column">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <span class="badge bg-primary">{{ course.category.name }}</span>
                                     <span class="badge bg-info">{{ course.get_difficulty_display }}</span>
-                                    <span class="text-primary fw-bold">
-                                        {% if course.price > 0 %}
-                                            {{ course.price }} ден.
-                                        {% else %}
-                                            Бесплатно
-                                        {% endif %}
-                                    </span>
                                 </div>
 
                                 <h5 class="card-title">{{ course.title }}</h5>
@@ -124,14 +146,23 @@
                                 <p class="card-text flex-grow-1">{{ course.description|truncatewords:15 }}</p>
 
                                 <div class="mt-auto">
-                                    <div class="d-flex justify-content-between align-items-center mb-2 small text-muted">
-                                        <span><i class="bi bi-people-fill me-1"></i>{{ course.enrolled_count }} студенти</span>
+                                    <div class="d-flex justify-content-between align-items-center mb-3 small text-muted">
+                                        <span><i class="bi bi-people-fill me-1"></i>{{ course.enrollments.count }} студенти</span>
                                         <span><i class="bi bi-clock-fill me-1"></i>{{ course.duration_hours }}ч</span>
                                     </div>
 
-                                    <a href="{{ course.get_absolute_url }}" class="btn btn-primary w-100">
-                                        Прикажи детали
-                                    </a>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="text-primary mb-0">
+                                            {% if course.price > 0 %}
+                                                {{ course.price }} ден.
+                                            {% else %}
+                                                Бесплатно
+                                            {% endif %}
+                                        </h5>
+                                        <a href="{% url 'courses:detail' course.slug %}" class="btn btn-primary btn-sm">
+                                            Прикажи детали
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -140,46 +171,60 @@
                 </div>
 
                 <!-- Pagination -->
-{% if is_paginated %}
-<nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?{{ get_params }}&page={{ page_obj.previous_page_number }}">Претходна</a>
-            </li>
-        {% endif %}
+                {% if is_paginated %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}{% if selected_price %}&price={{ selected_price }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
+                                    Претходна
+                                </a>
+                            </li>
+                        {% endif %}
 
-        {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-                <li class="page-item active">
-                    <span class="page-link">{{ num }}</span>
-                </li>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item">
-                    <a class="page-link" href="?{{ get_params }}&page={{ num }}">{{ num }}</a>
-                </li>
-            {% endif %}
-        {% endfor %}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}{% if selected_price %}&price={{ selected_price }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
 
-        {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?{{ get_params }}&page={{ page_obj.next_page_number }}">Следна</a>
-            </li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_difficulty %}&difficulty={{ selected_difficulty }}{% endif %}{% if selected_price %}&price={{ selected_price }}{% endif %}{% if selected_sort %}&sort={{ selected_sort }}{% endif %}">
+                                    Следна
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
             {% else %}
                 <div class="text-center py-5">
-                    <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
-                    <h4 class="mt-3 text-muted">Нема пронајдени курсеви</h4>
-                    <p class="text-muted">Пробајте да промените ги филтрите или термините за пребарување.</p>
-                    <a href="{% url 'courses:list' %}" class="btn btn-primary">
-                        Прикажи ги сите курсеви
-                    </a>
+                    <i class="bi bi-inbox text-muted" style="font-size: 5rem;"></i>
+                    <h3 class="mt-3">Нема пронајдено курсеви</h3>
+                    <p class="text-muted">Пробајте со други филтри</p>
+                    <a href="{% url 'courses:list' %}" class="btn btn-primary">Ресетирај филтри</a>
                 </div>
             {% endif %}
         </div>
     </div>
 </div>
+
+<style>
+.course-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
 {% endblock %}

@@ -27,9 +27,64 @@ class CourseListView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        return Course.objects.filter(status='published').annotate(
-            enrolled_count=Count('enrollments', filter=Q(enrollments__is_active=True))
-        ).order_by('-created_at')
+        queryset = Course.objects.filter(status='published').select_related('instructor', 'category')
+
+        # 🔍 Филтрирање по пребарување
+        search_query = self.request.GET.get('search', '').strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(instructor__first_name__icontains=search_query) |
+                Q(instructor__last_name__icontains=search_query)
+            )
+
+        # 📁 Филтрирање по категорија
+        category_id = self.request.GET.get('category', '').strip()
+        if category_id:
+            try:
+                queryset = queryset.filter(category_id=int(category_id))
+            except ValueError:
+                pass
+
+        # 📊 Филтрирање по ниво на тежина
+        difficulty = self.request.GET.get('difficulty', '').strip()
+        if difficulty in ['beginner', 'intermediate', 'advanced']:
+            queryset = queryset.filter(difficulty=difficulty)
+
+        # 💰 Филтрирање по цена
+        price_filter = self.request.GET.get('price', '').strip()
+        if price_filter == 'free':
+            queryset = queryset.filter(price=0)
+        elif price_filter == 'paid':
+            queryset = queryset.filter(price__gt=0)
+
+        # 🔀 Сортирање
+        sort_by = self.request.GET.get('sort', '-created_at').strip()
+        valid_sorts = ['-created_at', 'created_at', 'price', '-price', 'title', '-title']
+        if sort_by in valid_sorts:
+            queryset = queryset.order_by(sort_by)
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        print(f"🔍 Search: {search_query}")
+        print(f"📁 Category: {category_id}")
+        print(f"📊 Difficulty: {difficulty}")
+        print(f"💰 Price: {price_filter}")
+        print(f"🔀 Sort: {sort_by}")
+        print(f"📋 Results: {queryset.count()}")
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        context['search_query'] = self.request.GET.get('search', '')
+        context['selected_category'] = self.request.GET.get('category', '')
+        context['selected_difficulty'] = self.request.GET.get('difficulty', '')
+        context['selected_price'] = self.request.GET.get('price', '')
+        context['selected_sort'] = self.request.GET.get('sort', '-created_at')
+        return context
 
 
 class CourseDetailView(DetailView):
@@ -121,12 +176,24 @@ class LessonUpdateView(InstructorRequiredMixin, UpdateView):
     model = Lesson
     form_class = LessonForm
     template_name = 'courses/edit_lesson.html'
+    pk_url_kwarg = 'lesson_id'
 
     def get_object(self):
-        return get_object_or_404(Lesson, id=self.kwargs['lesson_id'], course__slug=self.kwargs['slug'])
+        return get_object_or_404(
+            Lesson,
+            id=self.kwargs['lesson_id'],
+            course__slug=self.kwargs['slug'],
+            course__instructor=self.request.user
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['course'] = self.object.course
+        context['lesson'] = self.object
+        return context
 
     def get_success_url(self):
-        return reverse('courses:manage', kwargs={'slug': self.kwargs['slug']})
+        return reverse('courses:manage', kwargs={'slug': self.object.course.slug})
 
 
 class LessonDeleteView(InstructorRequiredMixin, DeleteView):
@@ -140,20 +207,88 @@ class LessonDeleteView(InstructorRequiredMixin, DeleteView):
         return reverse('courses:manage', kwargs={'slug': self.kwargs['slug']})
 
 
-class LessonDetailView(LoginRequiredMixin, DetailView):
-    model = Lesson
-    template_name = 'courses/lesson_detail.html'
-    context_object_name = 'lesson'
+class LessonDetailView(LoginRequiredMixin, View):
+    """Прикажи лекција и дозволи да се означи како завршена"""
 
-    def get_object(self):
-        return get_object_or_404(Lesson, id=self.kwargs['lesson_id'], course__slug=self.kwargs['slug'])
+    def get(self, request, slug, lesson_id):
+        lesson = get_object_or_404(Lesson, id=lesson_id, course__slug=slug)
+        course = lesson.course
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        lesson = self.get_object()
-        context['quiz_obj'] = Quiz.objects.filter(lesson=lesson).first()
-        context['all_lessons'] = lesson.course.lessons.all().order_by('order')
-        return context
+        # Провери дали е запишан
+        enrollment = None
+        is_completed = False
+
+        if request.user.user_type == 'student':
+            enrollment = Enrollment.objects.filter(
+                student=request.user,
+                course=course,
+                is_active=True
+            ).first()
+
+            if enrollment:
+                # Провери дали лекцијата е завршена
+                progress = LessonProgress.objects.filter(
+                    enrollment=enrollment,
+                    lesson=lesson
+                ).first()
+                is_completed = progress.is_completed if progress else False
+
+        # Најди ја следната и претходната лекција
+        all_lessons = course.lessons.all().order_by('order')
+        next_lesson = all_lessons.filter(order__gt=lesson.order).first()
+        prev_lesson = all_lessons.filter(order__lt=lesson.order).last()
+
+        context = {
+            'lesson': lesson,
+            'quiz_obj': Quiz.objects.filter(lesson=lesson).first(),
+            'all_lessons': all_lessons,
+            'next_lesson': next_lesson,  # 🆕 НОВО
+            'prev_lesson': prev_lesson,  # 🆕 НОВО
+            'enrollment': enrollment,
+            'is_completed': is_completed,
+        }
+
+        return render(request, 'courses/lesson_detail.html', context)
+
+    def post(self, request, slug, lesson_id):
+        """Означи лекција како завршена"""
+        lesson = get_object_or_404(Lesson, id=lesson_id, course__slug=slug)
+
+        # Само студенти можат да означуваат лекции како завршени
+        if request.user.user_type != 'student':
+            messages.warning(request, 'Само студентите можат да означуваат лекции како завршени.')
+            return redirect('courses:lesson_detail', slug=slug, lesson_id=lesson_id)
+
+        # Провери дали е запишан
+        enrollment = Enrollment.objects.filter(
+            student=request.user,
+            course=lesson.course,
+            is_active=True
+        ).first()
+
+        if not enrollment:
+            messages.error(request, 'Морате да се запишете на курсот за да можете да означувате лекции.')
+            return redirect('courses:detail', slug=slug)
+
+        # Креирај или ажурирај прогрес
+        progress, created = LessonProgress.objects.get_or_create(
+            enrollment=enrollment,
+            lesson=lesson
+        )
+
+        if not progress.is_completed:
+            progress.is_completed = True
+            progress.completed_at = timezone.now()
+            progress.save()
+
+            # Ажурирај го вкупниот прогрес
+            enrollment.update_progress()
+
+            messages.success(request, f'✅ Лекцијата "{lesson.title}" е означена како завршена!')
+        else:
+            messages.info(request, 'Оваа лекција е веќе означена како завршена.')
+
+        return redirect('courses:lesson_detail', slug=slug, lesson_id=lesson_id)
 
 
 # --- КВИЗ ЛОГИКА (QuizTake, QuizSubmit, QuizResult) ---

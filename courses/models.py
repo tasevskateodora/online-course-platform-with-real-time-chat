@@ -86,24 +86,52 @@ class Lesson(models.Model):
     def __str__(self):
         return f"{self.course.title} - {self.title}"
 
+
 class Enrollment(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='enrollments')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollments')
     enrolled_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
     progress_percentage = models.FloatField(default=0.0)
 
     class Meta:
         unique_together = ['student', 'course']
 
     def update_progress(self):
-        total = self.course.lessons.count()
-        if total > 0:
-            done = LessonProgress.objects.filter(enrollment=self, is_completed=True).count()
-            self.progress_percentage = round((done / total) * 100, 2)
-            if self.progress_percentage >= 100: self.is_completed = True
-            self.save()
+        """Ажурирај го прогресот базиран на завршени лекции"""
+        total_lessons = self.course.lessons.count()
+
+        if total_lessons == 0:
+            self.progress_percentage = 0.0
+            self.is_completed = False
+            self.completed_at = None
+        else:
+            # Пребројте ги завршените лекции
+            completed_lessons = LessonProgress.objects.filter(
+                enrollment=self,
+                is_completed=True
+            ).count()
+
+            # Пресметај процент
+            self.progress_percentage = round((completed_lessons / total_lessons) * 100, 2)
+
+            # 🔥 ВАЖНО: Означи како завршен САМО ако сите лекции се завршени
+            if completed_lessons >= total_lessons:
+                self.is_completed = True
+                if not self.completed_at:
+                    from django.utils import timezone
+                    self.completed_at = timezone.now()
+            else:
+                # Ако не се сите завршени, ресетирај го статусот
+                self.is_completed = False
+                self.completed_at = None
+
+        self.save()
+
+    def __str__(self):
+        return f"{self.student.username} - {self.course.title}"
 
 class LessonProgress(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
